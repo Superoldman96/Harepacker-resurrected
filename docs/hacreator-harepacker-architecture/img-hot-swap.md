@@ -388,6 +388,20 @@ HaEditor.xaml.cs
 - [ ] Delete + add same file quickly → correct final state
 - [ ] File locked by external app → graceful error handling
 
+### Watcher safety and ownership invariants
+
+Watcher paths are canonicalized before registration, including volume roots,
+and registration/removal is atomic so concurrent callers cannot leak duplicate
+native watchers. Debounce timers are published before they are armed; stale
+callbacks and callbacks queued during disposal are ignored. File state uses the
+canonical full path, path-boundary-aware cleanup, and a content hash when a
+timestamp/length-only comparison would miss an edit that restores the original
+metadata.
+
+The watcher does not own caller-provided source data. `Dispose` stops native
+watchers and timers, clears pending changes, and suppresses callbacks that race
+with disposal.
+
 ### Thread Safety
 - [ ] Modify files while scrolling panel → no crash
 - [ ] Add/delete during map editing → no enumeration errors

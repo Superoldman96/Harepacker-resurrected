@@ -362,6 +362,28 @@ public static WzMapleVersion DetectMapleVersion(string wzFilePath, out short fil
 
 **Source:** `MapleLib/WzLib/Util/WzTool.cs`
 
+### Malformed-input limits and parser state
+
+MapleLib treats WZ data as untrusted binary input. The parser rejects lengths,
+offsets, and block ends that cannot fit inside the containing stream before
+allocating or seeking. It also applies bounded ceilings to attacker-controlled
+materialization: WZ strings (64 MiB), null-terminated metadata strings (1 MiB),
+header strings (1 MiB), individual raw/media payloads (256 MiB), property-list
+entries (100,000), and nesting depth (128). PNG inflation and packet bodies have
+their own checked limits.
+
+`WzFile` reparsing is transactional: if replacement bytes fail validation, the
+previous reader and directory tree remain usable. `PartialStream` enforces its
+logical range for synchronous, asynchronous, and APM operations and documents
+whether disposing it also disposes the caller's stream (`leaveOpen`).
+Version-detection probes retain the already-validated directory on success and
+dispose every rejected probe tree; they do not parse the accepted directory a
+second time.
+
+Extraction and packing resolve archive- and manifest-supplied names below their
+requested roots, reject traversal/rooted paths, and refuse existing symlink or
+junction components that would redirect a read or write outside the root.
+
 ---
 
 ## See Also
