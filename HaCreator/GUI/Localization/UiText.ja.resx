@@ -48,6 +48,9 @@
   <data name="Init_ImgRecommendedHint" xml:space="preserve">
     <value>一度抽出すれば、起動が高速になり、安定した編集と HaCreator で最も充実したサポートを利用できます。</value>
   </data>
+  <data name="Init_ImgGitHint" xml:space="preserve">
+    <value>ヒント：抽出した .img ファイルを Git リポジトリで管理すると、WZ の編集内容を簡単に追跡・比較できます。</value>
+  </data>
   <data name="Init_NoVersions" xml:space="preserve">
     <value>バージョンが見つかりません。
 

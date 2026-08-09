@@ -48,6 +48,9 @@
   <data name="Init_ImgRecommendedHint" xml:space="preserve">
     <value>只需擷取一次，即可享有更快的啟動速度、可靠的編輯體驗，以及 HaCreator 支援最完善的工作流程。</value>
   </data>
+  <data name="Init_ImgGitHint" xml:space="preserve">
+    <value>提示：將擷取的 .img 檔案保存在 Git 儲存庫中，可以更輕鬆地追蹤及比較 WZ 編輯內容。</value>
+  </data>
   <data name="Init_NoVersions" xml:space="preserve">
     <value>找不到任何版本。
 

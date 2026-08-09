@@ -16,6 +16,7 @@
   <data name="Init_RecommendedBadge" xml:space="preserve"><value>Recommended</value></data>
   <data name="Init_ImgRecommendedTitle" xml:space="preserve"><value>Best experience: use an IMG version</value></data>
   <data name="Init_ImgRecommendedHint" xml:space="preserve"><value>Extract once, then enjoy faster startup, reliable editing, and the best-supported workflow in HaCreator.</value></data>
+  <data name="Init_ImgGitHint" xml:space="preserve"><value>Tip: Keep the extracted .img files in a Git repository to make WZ edits easier to track and compare.</value></data>
   <data name="Init_NoVersions" xml:space="preserve"><value>No versions found.
 
 Choose Extract new to extract WZ files to IMG format, or Browse to add an existing folder.</value></data>
