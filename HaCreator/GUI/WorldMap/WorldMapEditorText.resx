@@ -16,6 +16,8 @@
   <data name="ValidateSelected"><value>Validate current</value></data>
   <data name="ValidateAll"><value>Check all world maps</value></data>
   <data name="ValidateAllHint"><value>Audit every world map for broken hierarchy and links, missing maps and assets, invalid marker types, duplicate keys, canvas corruption, and inconsistent fog data.</value></data>
+  <data name="AISettings"><value>AI settings</value></data>
+  <data name="AISettingsHint"><value>Configure the AI endpoint, models, and API key.</value></data>
   <data name="AddMarker"><value>Add marker</value></data>
   <data name="AddLink"><value>Add child / link</value></data>
   <data name="ReplaceBackground"><value>Replace background</value></data>

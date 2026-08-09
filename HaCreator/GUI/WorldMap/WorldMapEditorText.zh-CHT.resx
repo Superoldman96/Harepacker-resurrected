@@ -8,4 +8,6 @@
   <data name="BackgroundReplaced"><value>已取代 BaseImg 背景，並暫存為可復原編輯。</value></data><data name="RuntimePreviewStarted"><value>已啟動執行階段地圖預覽。</value></data><data name="RuntimePreviewUnavailable"><value>HaCreator 地圖模擬器未啟用，無法使用執行階段預覽。</value></data>
   <data name="AddFog"><value>新增霧層</value></data><data name="RemoveMarker"><value>移除標記</value></data><data name="RemoveLink"><value>移除連結</value></data><data name="RemoveFog"><value>移除霧層</value></data><data name="AddMap"><value>新增地圖</value></data><data name="MapSearch"><value>地圖 ID/名稱選取器</value></data><data name="MapSearchHint"><value>依 ID、街道或地圖名稱搜尋 InfoManager 名稱。</value></data><data name="Derived"><value>衍生可用性</value></data>
   <data name="UnknownMap"><value>&#x672A;&#x77E5;&#x5730;&#x5716;</value></data>
+  <data name="AISettings"><value>AI 設定</value></data>
+  <data name="AISettingsHint"><value>設定 AI 端點、模型和 API 金鑰。</value></data>
 </root>

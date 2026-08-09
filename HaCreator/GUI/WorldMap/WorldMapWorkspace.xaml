@@ -117,6 +117,8 @@
         <Border Grid.Row="0" Style="{StaticResource HareToolbarStyle}" Margin="12,12,12,8">
             <DockPanel LastChildFill="True">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Margin="0,0,14,0" Content="{world:WorldMapEditorText AISettings}" Click="AISettings_Click"
+                            ToolTip="{world:WorldMapEditorText AISettingsHint}" AutomationProperties.Name="{world:WorldMapEditorText AISettings}"/>
                     <TextBlock Text="{world:WorldMapEditorText Source}" Style="{StaticResource HareMutedTextStyle}" VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding SourceName}" Margin="6,0,14,0" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180" ToolTip="{Binding SourceName}"/>
                     <TextBlock Text="{Binding SourceMode}" Style="{StaticResource HareMutedTextStyle}" VerticalAlignment="Center"/>

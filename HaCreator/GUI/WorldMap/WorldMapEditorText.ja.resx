@@ -8,4 +8,6 @@
   <data name="BackgroundReplaced"><value>BaseImg 背景を置き換え、元に戻せる編集として保留しました。</value></data><data name="RuntimePreviewStarted"><value>実行時マッププレビューを開始しました。</value></data><data name="RuntimePreviewUnavailable"><value>HaCreator マップシミュレーターが有効でないため、実行時プレビューを利用できません。</value></data>
   <data name="AddFog"><value>フォグを追加</value></data><data name="RemoveMarker"><value>マーカーを削除</value></data><data name="RemoveLink"><value>リンクを削除</value></data><data name="RemoveFog"><value>フォグを削除</value></data><data name="AddMap"><value>マップを追加</value></data><data name="MapSearch"><value>マップ ID/名前ピッカー</value></data><data name="MapSearchHint"><value>ID、街、マップ名で InfoManager のマップ名を検索します。</value></data><data name="Derived"><value>派生可用性</value></data>
   <data name="UnknownMap"><value>&#x4E0D;&#x660E;&#x306A;&#x30DE;&#x30C3;&#x30D7;</value></data>
+  <data name="AISettings"><value>AI 設定</value></data>
+  <data name="AISettingsHint"><value>AI エンドポイント、モデル、API キーを設定します。</value></data>
 </root>

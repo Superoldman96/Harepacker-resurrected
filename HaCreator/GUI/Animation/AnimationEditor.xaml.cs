@@ -1433,6 +1433,7 @@ namespace HaCreator.GUI.FrameAnimation
                 !string.IsNullOrWhiteSpace(aiPromptTextBox.Text);
             aiSuggestButton.IsEnabled = !busy;
             aiSettingsButton.IsEnabled = !busy;
+            toolbarAISettingsButton.IsEnabled = !busy;
             aiCancelButton.IsEnabled = busy;
             if (status != null)
                 aiStatusText.Text = status;

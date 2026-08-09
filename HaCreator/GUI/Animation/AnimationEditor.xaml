@@ -147,6 +147,9 @@
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="toolbarAISettingsButton" Style="{StaticResource HareButtonStyle}" Height="32" Margin="0,0,12,0"
+                            Content="{local:AnimationEditorText AnimationEditor_AISettings}" Click="AISettings_Click"
+                            AutomationProperties.Name="{local:AnimationEditorText AnimationEditor_AISettings}"/>
                     <TextBlock Foreground="{DynamicResource HareMutedTextBrush}" VerticalAlignment="Center"
                                Text="{local:AnimationEditorText AnimationEditor_Zoom}"/>
                     <Slider x:Name="zoomSlider" Width="110" Minimum="0.25" Maximum="4" Value="1.5" Margin="8,8"

@@ -8,4 +8,6 @@
   <data name="BackgroundReplaced"><value>已替换 BaseImg 背景，并作为可撤销编辑暂存。</value></data><data name="RuntimePreviewStarted"><value>已启动运行时地图预览。</value></data><data name="RuntimePreviewUnavailable"><value>HaCreator 地图模拟器未活动，无法使用运行时预览。</value></data>
   <data name="AddFog"><value>添加雾层</value></data><data name="RemoveMarker"><value>移除标记</value></data><data name="RemoveLink"><value>移除链接</value></data><data name="RemoveFog"><value>移除雾层</value></data><data name="AddMap"><value>添加地图</value></data><data name="MapSearch"><value>地图 ID/名称选择器</value></data><data name="MapSearchHint"><value>按 ID、街道或地图名称搜索 InfoManager 地图名称。</value></data><data name="Derived"><value>派生可用性</value></data>
   <data name="UnknownMap"><value>&#x672A;&#x77E5;&#x5730;&#x56FE;</value></data>
+  <data name="AISettings"><value>AI 设置</value></data>
+  <data name="AISettingsHint"><value>配置 AI 端点、模型和 API 密钥。</value></data>
 </root>

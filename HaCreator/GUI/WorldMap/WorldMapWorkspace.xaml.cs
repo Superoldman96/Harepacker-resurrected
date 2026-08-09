@@ -2,6 +2,7 @@
 
 using HaCreator.GUI.Localization;
 using HaCreator.GUI.InstanceEditor;
+using HaCreator.GUI.EditorPanels;
 using HaCreator.WorldMap;
 using HaCreator.Wz;
 using MapleLib.WzLib;
@@ -166,6 +167,11 @@ public partial class WorldMapWorkspace : Window
     private void RuntimePreview_Executed(object sender, ExecutedRoutedEventArgs e) => RuntimePreview();
     private void Undo_Executed(object sender, ExecutedRoutedEventArgs e) => Undo();
     private void Redo_Executed(object sender, ExecutedRoutedEventArgs e) => Redo();
+
+    private void AISettings_Click(object sender, RoutedEventArgs e)
+    {
+        new AISettingsDialog { Owner = this }.ShowDialog();
+    }
 
     private void Undo()
     {
