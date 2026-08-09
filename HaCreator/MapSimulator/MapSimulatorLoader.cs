@@ -522,8 +522,8 @@ namespace HaCreator.MapSimulator {
         /// <param name="soundUIImage"></param>
         /// <param name="bBigBang"></param>
         /// <returns></returns>
-        public static Tuple<StatusBarUI, StatusBarChatUI> CreateStatusBarFromProperty(WzImage uiStatusBar, WzImage uiStatusBar2, WzImage uiBasic, WzImage uiBuffIcon, Board mapBoard, GraphicsDevice device, float UserScreenScaleFactor, RenderParameters renderParams, WzImage soundUIImage, bool bBigBang) {
-            return UILoader.CreateStatusBarFromProperty(uiStatusBar, uiStatusBar2, uiBasic, uiBuffIcon, mapBoard, device, UserScreenScaleFactor, renderParams, soundUIImage, bBigBang);
+        public static Tuple<StatusBarUI, StatusBarChatUI> CreateStatusBarFromProperty(WzImage uiStatusBar, WzImage uiStatusBar2, WzImage uiStatusBar3, WzImage uiBasic, WzImage uiBuffIcon, Board mapBoard, GraphicsDevice device, float UserScreenScaleFactor, RenderParameters renderParams, WzImage soundUIImage, bool bBigBang) {
+            return UILoader.CreateStatusBarFromProperty(uiStatusBar, uiStatusBar2, uiStatusBar3, uiBasic, uiBuffIcon, mapBoard, device, UserScreenScaleFactor, renderParams, soundUIImage, bBigBang);
         }
 
         /// <summary>
@@ -542,7 +542,11 @@ namespace HaCreator.MapSimulator {
         /// <param name="bBigBang">Big bang update</param>
         /// <returns></returns>
         public static MinimapUI CreateMinimapFromProperty(WzImage uiWindow1Image, WzImage uiWindow2Image, WzImage uiBasicImage, Board mapBoard, GraphicsDevice device, float UserScreenScaleFactor, string MapName, string StreetName, WzImage soundUIImage, bool bBigBang) {
-            return UILoader.CreateMinimapFromProperty(uiWindow1Image, uiWindow2Image, uiBasicImage, mapBoard, device, UserScreenScaleFactor, MapName, StreetName, soundUIImage, bBigBang);
+            return CreateMinimapFromProperty(uiWindow1Image, uiWindow2Image, null, uiBasicImage, mapBoard, device, UserScreenScaleFactor, MapName, StreetName, soundUIImage, bBigBang);
+        }
+
+        public static MinimapUI CreateMinimapFromProperty(WzImage uiWindow1Image, WzImage uiWindow2Image, WzImage uiMapImage, WzImage uiBasicImage, Board mapBoard, GraphicsDevice device, float UserScreenScaleFactor, string MapName, string StreetName, WzImage soundUIImage, bool bBigBang) {
+            return UILoader.CreateMinimapFromProperty(uiWindow1Image, uiWindow2Image, uiMapImage, uiBasicImage, mapBoard, device, UserScreenScaleFactor, MapName, StreetName, soundUIImage, bBigBang);
         }
 
         /// <summary>

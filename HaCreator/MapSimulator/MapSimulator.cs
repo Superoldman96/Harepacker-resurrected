@@ -4434,6 +4434,12 @@ namespace HaCreator.MapSimulator
                 statusBarUi.MenuRequested = () => ToggleStatusBarPopupWindow(MapSimulatorWindowNames.Menu, MapSimulatorWindowNames.System);
                 statusBarUi.SystemRequested = () => ToggleStatusBarPopupWindow(MapSimulatorWindowNames.System, MapSimulatorWindowNames.Menu);
                 statusBarUi.ChannelRequested = HandleUtilityChannelPopupRequested;
+                statusBarUi.EquipmentRequested = () => uiWindowManager?.ToggleWindow(MapSimulatorWindowNames.Equipment, currTickCount);
+                statusBarUi.InventoryRequested = () => uiWindowManager?.ToggleWindow(MapSimulatorWindowNames.Inventory, currTickCount);
+                statusBarUi.AbilityRequested = () => uiWindowManager?.ToggleWindow(MapSimulatorWindowNames.Ability, currTickCount);
+                statusBarUi.SkillsRequested = () => uiWindowManager?.ToggleWindow(MapSimulatorWindowNames.Skills, currTickCount);
+                statusBarUi.KeyConfigRequested = () => uiWindowManager?.ToggleWindow(MapSimulatorWindowNames.KeyConfig, currTickCount);
+                statusBarUi.QuickSlotRequested = () => uiWindowManager?.ToggleWindow(MapSimulatorWindowNames.QuickSlot, currTickCount);
                 statusBarUi.BuffCancelRequested = skillId =>
                     RequestStatusBarBuffCancelForClientCancelIngress(skillId, currTickCount);
             }

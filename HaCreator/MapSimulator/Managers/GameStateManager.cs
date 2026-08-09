@@ -1,4 +1,5 @@
 using System;
+using HaCreator.MapSimulator.UI;
 
 namespace HaCreator.MapSimulator.Managers
 {
@@ -70,6 +71,13 @@ namespace HaCreator.MapSimulator.Managers
         /// Chaos update version flag
         /// </summary>
         public bool IsBigBang2Update { get; set; } = true;
+
+        /// <summary>
+        /// UI asset/layout family selected for the active data source.
+        /// V update clients remain Big-Bang-compatible while their
+        /// dedicated responsive loaders are selected through this value.
+        /// </summary>
+        internal MapSimulatorUiFamily UiFamily { get; set; } = MapSimulatorUiFamily.BigBang;
 
         #endregion
 

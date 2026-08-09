@@ -68,6 +68,10 @@ namespace HaCreator.MapSimulator.Loaders
         private static readonly ConcurrentDictionary<string, (Dictionary<MapSimulatorChatTargetType, Texture2D> Textures, Dictionary<MapSimulatorChatTargetType, Point> Origins)> _chatTargetTextureCache = new(StringComparer.Ordinal);
         private static readonly ConcurrentDictionary<string, StatusBarChatUI.StatusBarPointNotificationAnimation> _pointNotificationAnimationCache = new(StringComparer.Ordinal);
         private static Point _sharedMinimapWindowPosition = DefaultMinimapWindowPosition;
+        // Kept as a switch while the legacy chat input is rebuilt from its
+        // client-owned controls; the extracted legacy rule alone is only a visual
+        // artifact and should not be shown.
+        private static readonly bool RenderLegacyChatStrip = true;
 
         private static string GetDeviceCachePrefix(GraphicsDevice device)
         {
@@ -76,9 +80,9 @@ namespace HaCreator.MapSimulator.Loaders
                 : $"device:{RuntimeHelpers.GetHashCode(device)}";
         }
 
-        private static string BuildStatusBarCacheKey(GraphicsDevice device, RenderParameters renderParams, bool isBigBang)
+        private static string BuildStatusBarCacheKey(GraphicsDevice device, RenderParameters renderParams, bool isBigBang, string family = null)
         {
-            return $"{GetDeviceCachePrefix(device)}|statusbar|bb:{isBigBang}|rw:{renderParams.RenderWidth}|rh:{renderParams.RenderHeight}|scale:{renderParams.RenderObjectScaling}";
+            return $"{GetDeviceCachePrefix(device)}|statusbar|family:{family ?? (isBigBang ? "2" : "1")}|bb:{isBigBang}|rw:{renderParams.RenderWidth}|rh:{renderParams.RenderHeight}|scale:{renderParams.RenderObjectScaling}";
         }
 
         private static string BuildMinimapCacheKey(GraphicsDevice device, Board mapBoard, float userScreenScaleFactor, bool isBigBang)
@@ -130,13 +134,28 @@ namespace HaCreator.MapSimulator.Loaders
         /// <param name="bBigBang"></param>
         /// <returns></returns>
         public static Tuple<StatusBarUI, StatusBarChatUI> CreateStatusBarFromProperty(
-            WzImage uiStatusBar, WzImage uiStatusBar2, WzImage uiBasic, WzImage uiBuffIcon, Board mapBoard, GraphicsDevice device,
+            WzImage uiStatusBar, WzImage uiStatusBar2, WzImage uiStatusBar3, WzImage uiBasic, WzImage uiBuffIcon, Board mapBoard, GraphicsDevice device,
             float UserScreenScaleFactor, RenderParameters renderParams, WzImage soundUIImage, bool bBigBang)
         {
-            string statusBarCacheKey = BuildStatusBarCacheKey(device, renderParams, bBigBang);
+            string statusBarFamily = uiStatusBar3 != null ? "3" : (bBigBang ? "2" : "1");
+            string statusBarCacheKey = BuildStatusBarCacheKey(device, renderParams, bBigBang, statusBarFamily);
             if (_statusBarCache.TryGetValue(statusBarCacheKey, out Tuple<StatusBarUI, StatusBarChatUI> cachedStatusBar))
             {
                 return cachedStatusBar;
+            }
+
+            // StatusBar3 is owned by the V update client family.  It is
+            // present alongside the legacy StatusBar/StatusBar2 assets, so it
+            // must take precedence over the historical bBigBang switch.
+            if (uiStatusBar3 != null)
+            {
+                Tuple<StatusBarUI, StatusBarChatUI> statusBar3 = CreateStatusBar3FromProperty(
+                    uiStatusBar3, uiBasic, uiBuffIcon, device, renderParams, soundUIImage);
+                if (statusBar3 != null)
+                {
+                    _statusBarCache[statusBarCacheKey] = statusBar3;
+                    return statusBar3;
+                }
             }
 
             // Pre-big bang maplestory status bar
@@ -797,130 +816,105 @@ namespace HaCreator.MapSimulator.Loaders
             else
             {
                 // Pre-BigBang and Beta MapleStory status bar (uses StatusBar.img instead of StatusBar2.img)
-                // This handles both pre-BB (v82 etc.) and beta (v15 etc.) since they share similar structure:
+                // This handles pre big bang and beta clients since they share similar structure:
                 // - base/backgrnd (800x71 main background)
                 // - gauge/bar (gauge fill texture)
                 // - number/0-9, Lbracket, Rbracket, slash, percent (digit textures)
-                // - BtShop, BtMenu, BtShort (common buttons, some may be missing in beta)
+                // - BtShop, BtNPT, BtMenu, BtShort and legacy shortcut keys
+                //   (common controls, some may be missing in beta)
                 WzSubProperty baseProperties = (uiStatusBar?["base"] as WzSubProperty);
                 WzSubProperty gaugeProperties = (uiStatusBar?["gauge"] as WzSubProperty);
                 WzSubProperty numberProperties = (uiStatusBar?["number"] as WzSubProperty);
 
                 if (baseProperties != null)
                 {
-                    HaUIGrid grid = new HaUIGrid(1, 1);
-
-                    // Main background - 800x71 in pre-BB
+                    // Compose the legacy frame once.  In pre-Big Bang skins the
+                    // gauge artwork is part of the static HUD rather than a
+                    // modern, dynamically-sized overlay.
                     System.Drawing.Bitmap backgrnd = LoadCanvasBitmap((WzCanvasProperty)baseProperties?["backgrnd"]);
+                    System.Drawing.Bitmap backgrnd2 = LoadCanvasBitmap((WzCanvasProperty)baseProperties?["backgrnd2"]);
+                    System.Drawing.Bitmap gaugeBar = LoadCanvasBitmap(gaugeProperties?["bar"] as WzCanvasProperty);
+                    System.Drawing.Bitmap gaugeGraduation = LoadCanvasBitmap(gaugeProperties?["graduation"] as WzCanvasProperty);
+                    int legacyViewportWidth = Math.Max(1, (int)(renderParams.RenderWidth / renderParams.RenderObjectScaling));
+                    System.Drawing.Bitmap composedFrame = ComposeLegacyStatusBarFrame(
+                        backgrnd, backgrnd2, gaugeBar, gaugeGraduation, legacyViewportWidth);
+                    backgrnd?.Dispose();
+                    backgrnd2?.Dispose();
+                    gaugeBar?.Dispose();
+                    gaugeGraduation?.Dispose();
 
-                    if (backgrnd != null)
+                    if (composedFrame == null)
                     {
-                        grid.AddRenderable(0, 0, new HaUIImage(new HaUIInfo()
-                        {
-                            Bitmap = backgrnd,
-                            VerticalAlignment = HaUIAlignment.Start,
-                            HorizontalAlignment = HaUIAlignment.Start
-                        }));
-                    }
-
-                    const int UI_PADDING_PX = 2;
-
-                    // Load gauge textures for HP, MP, EXP bars
-                    Texture2D hpGaugeTexture = null, mpGaugeTexture = null, expGaugeTexture = null;
-
-                    if (gaugeProperties != null)
-                    {
-                        // Pre-BB uses gauge/bar for the gauge fill, gauge/hpFlash and gauge/mpFlash for animations
-                        // The gauge/bar is the main gauge texture
-                        WzCanvasProperty barCanvas = gaugeProperties["bar"] as WzCanvasProperty;
-                        if (barCanvas != null)
-                        {
-                            var barBitmap = LoadCanvasBitmap(barCanvas);
-                            if (barBitmap != null)
-                            {
-                                // Pre-BB uses the same gauge bar texture for all gauges
-                                try
-                                {
-                                    hpGaugeTexture = barBitmap.ToTexture2D(device);
-                                    mpGaugeTexture = barBitmap.ToTexture2D(device);
-                                    expGaugeTexture = barBitmap.ToTexture2D(device);
-                                }
-                                finally
-                                {
-                                    barBitmap.Dispose();
-                                }
-                            }
-                        }
+                        composedFrame = new System.Drawing.Bitmap(1, 1);
                     }
 
                     // Sound properties for buttons
                     WzBinaryProperty binaryProp_BtMouseClickSoundProperty = (WzBinaryProperty)soundUIImage?["BtMouseClick"];
                     WzBinaryProperty binaryProp_BtMouseOverSoundProperty = (WzBinaryProperty)soundUIImage?["BtMouseOver"];
 
-                    // Pre-BB buttons: BtShop (CashShop), BtMenu, BtNPT (MTS equivalent), BtShort
-                    WzSubProperty subProperty_BtShop = (WzSubProperty)uiStatusBar?["BtShop"];
-                    UIObject obj_Ui_BtCashShop = null;
-                    if (subProperty_BtShop != null)
+                    // The client reserves fixed slots for these four controls in
+                    // the 800px legacy frame.
+                    UIObject CreateLegacyStatusBarButton(string name, int x, int y)
                     {
-                        obj_Ui_BtCashShop = new UIObject(subProperty_BtShop, binaryProp_BtMouseClickSoundProperty, binaryProp_BtMouseOverSoundProperty,
+                        WzSubProperty buttonProperty = uiStatusBar?[name] as WzSubProperty;
+                        if (buttonProperty == null)
+                        {
+                            return null;
+                        }
+
+                        UIObject button = new UIObject(
+                            buttonProperty,
+                            binaryProp_BtMouseClickSoundProperty,
+                            binaryProp_BtMouseOverSoundProperty,
                             false,
-                            new Point(0, 0), device);
-                        obj_Ui_BtCashShop.X = backgrnd?.Width ?? 800 - obj_Ui_BtCashShop.CanvasSnapshotWidth - UI_PADDING_PX;
-                        obj_Ui_BtCashShop.Y = backgrnd?.Height ?? 71;
+                            Point.Zero,
+                            device);
+                        button.X = x;
+                        button.Y = y;
+                        return button;
                     }
 
-                    WzSubProperty subProperty_BtNPT = (WzSubProperty)uiStatusBar?["BtNPT"];
-                    UIObject obj_Ui_BtMTS = null;
-                    if (subProperty_BtNPT != null)
-                    {
-                        obj_Ui_BtMTS = new UIObject(subProperty_BtNPT, binaryProp_BtMouseClickSoundProperty, binaryProp_BtMouseOverSoundProperty,
-                            false,
-                            new Point(0, 0), device);
-                        if (obj_Ui_BtCashShop != null)
-                        {
-                            obj_Ui_BtMTS.X = obj_Ui_BtCashShop.X - obj_Ui_BtMTS.CanvasSnapshotWidth;
-                        }
-                        obj_Ui_BtMTS.Y = backgrnd?.Height ?? 71;
-                    }
+                    UIObject obj_Ui_BtCashShop = CreateLegacyStatusBarButton("BtShop", LegacyStatusBarLayout.GetPrimaryButtonPosition(0).X, LegacyStatusBarLayout.GetPrimaryButtonPosition(0).Y);
+                    UIObject obj_Ui_BtMTS = CreateLegacyStatusBarButton("BtNPT", LegacyStatusBarLayout.GetPrimaryButtonPosition(1).X, LegacyStatusBarLayout.GetPrimaryButtonPosition(1).Y);
+                    UIObject obj_Ui_BtMenu = CreateLegacyStatusBarButton("BtMenu", LegacyStatusBarLayout.GetPrimaryButtonPosition(2).X, LegacyStatusBarLayout.GetPrimaryButtonPosition(2).Y);
+                    UIObject obj_Ui_BtSystem = CreateLegacyStatusBarButton("BtShort", LegacyStatusBarLayout.GetPrimaryButtonPosition(3).X, LegacyStatusBarLayout.GetPrimaryButtonPosition(3).Y);
 
-                    WzSubProperty subProperty_BtMenu = (WzSubProperty)uiStatusBar?["BtMenu"];
-                    UIObject obj_Ui_BtMenu = null;
-                    if (subProperty_BtMenu != null)
+                    var legacyShortcutButtons = new List<UIObject>();
+                    string[] legacyShortcutNames =
                     {
-                        obj_Ui_BtMenu = new UIObject(subProperty_BtMenu, binaryProp_BtMouseClickSoundProperty, binaryProp_BtMouseOverSoundProperty,
-                            false,
-                            new Point(0, 0), device);
-                        if (obj_Ui_BtMTS != null)
-                        {
-                            obj_Ui_BtMenu.X = obj_Ui_BtMTS.X - obj_Ui_BtMenu.CanvasSnapshotWidth;
-                        }
-                        else if (obj_Ui_BtCashShop != null)
-                        {
-                            obj_Ui_BtMenu.X = obj_Ui_BtCashShop.X - obj_Ui_BtMenu.CanvasSnapshotWidth;
-                        }
-                        obj_Ui_BtMenu.Y = backgrnd?.Height ?? 71;
-                    }
-
-                    WzSubProperty subProperty_BtShort = (WzSubProperty)uiStatusBar?["BtShort"];
-                    UIObject obj_Ui_BtSystem = null;
-                    if (subProperty_BtShort != null)
+                        "EquipKey",
+                        "InvenKey",
+                        "StatKey",
+                        "SkillKey",
+                        "KeySet",
+                        "QuickSlot",
+                        "QuickSlotD"
+                    };
+                    for (int i = 0; i < legacyShortcutNames.Length; i++)
                     {
-                        obj_Ui_BtSystem = new UIObject(subProperty_BtShort, binaryProp_BtMouseClickSoundProperty, binaryProp_BtMouseOverSoundProperty,
-                            false,
-                            new Point(0, 0), device);
-                        if (obj_Ui_BtMenu != null)
+                        UIObject shortcutButton = CreateLegacyStatusBarButton(
+                            legacyShortcutNames[i],
+                            LegacyStatusBarLayout.GetShortcutPosition(i).X,
+                            LegacyStatusBarLayout.GetShortcutPosition(i).Y);
+                        if (shortcutButton != null)
                         {
-                            obj_Ui_BtSystem.X = obj_Ui_BtMenu.X - obj_Ui_BtSystem.CanvasSnapshotWidth;
+                            legacyShortcutButtons.Add(shortcutButton);
                         }
-                        obj_Ui_BtSystem.Y = backgrnd?.Height ?? 71;
                     }
 
                     // Pre-BB doesn't have BtChannel, create a dummy null
                     UIObject obj_Ui_BtChannel = null;
 
-                    Texture2D texture_backgrnd = grid.Render().ToTexture2DAndDispose(device);
+                    int frameWidth = composedFrame.Width;
+                    int frameHeight = composedFrame.Height;
+                    Texture2D texture_backgrnd = composedFrame.ToTexture2DAndDispose(device);
 
-                    IDXObject dxObj_backgrnd = new DXObject(0, (int)(renderParams.RenderHeight / renderParams.RenderObjectScaling) - grid.GetSize().Height, texture_backgrnd, 0);
+                    int legacyViewportHeight = Math.Max(1, (int)(renderParams.RenderHeight / renderParams.RenderObjectScaling));
+                    // The classic client stretches the bottom surface across the
+                    // viewport; controls retain their authored 800px coordinates.
+                    int legacyX = 0;
+                    int legacyY = Math.Max(0, legacyViewportHeight - frameHeight);
+                    IDXObject dxObj_backgrnd = new DXObject(legacyX, legacyY, texture_backgrnd, 0);
                     StatusBarUI statusBar = new StatusBarUI(dxObj_backgrnd,
                         obj_Ui_BtCashShop,
                         obj_Ui_BtMTS,
@@ -928,15 +922,17 @@ namespace HaCreator.MapSimulator.Loaders
                         obj_Ui_BtSystem,
                         obj_Ui_BtChannel,
                         new Point(dxObj_backgrnd.X, dxObj_backgrnd.Y),
-                        new List<UIObject> { });
+                        legacyShortcutButtons);
                     statusBar.InitializeButtons();
+                    statusBar.BindLegacyShortcutButtons(legacyShortcutButtons);
+                    statusBar.SetDynamicGaugeBarsEnabled(false);
+                    statusBar.SetCharacterInfoLayout(
+                        LegacyStatusBarLayout.LevelTextOffset,
+                        LegacyStatusBarLayout.JobTextOffset,
+                        LegacyStatusBarLayout.NameTextOffset,
+                        LegacyStatusBarLayout.LevelTextScale);
 
-                    // Set gauge textures if loaded
-                    if (hpGaugeTexture != null || mpGaugeTexture != null || expGaugeTexture != null)
-                    {
-                    statusBar.SetGaugeTextures(hpGaugeTexture, mpGaugeTexture, expGaugeTexture);
                     statusBar.SetBuffIconTextures(LoadBuffIconTextures(uiBuffIcon, device));
-                    }
                     statusBar.SetCooldownMasks(LoadStatusBarCooldownMasks(device, isBigBang: false));
                     statusBar.SetTemporaryStatViewTexture(LoadStatusBarTemporaryStatViewTexture(device, isBigBang: false));
                     statusBar.SetTemporaryStatViewShadowTextures(LoadStatusBarTemporaryStatViewShadowTextures(device, isBigBang: false));
@@ -1049,13 +1045,308 @@ namespace HaCreator.MapSimulator.Loaders
                         }
                     }
 
-                    // Pre-BB doesn't have separate chat UI, return null for chatUI
-                    var result = new Tuple<StatusBarUI, StatusBarChatUI>(statusBar, null);
-                    _statusBarCache[statusBarCacheKey] = result;
-                    return result;
+                    // The legacy chat canvases are only a 5px rule/placeholder in the
+                    // extracted WZ and render as an intrusive black line in the
+                    // simulator. Keep the chat owner absent until its full input
+                    // geometry is available; this also matches the clean client
+                    // HUD surface shown by the classic map view.
+                    if (!RenderLegacyChatStrip)
+                    {
+                        var result = new Tuple<StatusBarUI, StatusBarChatUI>(statusBar, null);
+                        _statusBarCache[statusBarCacheKey] = result;
+                        return result;
+                    }
+
+                    // Legacy clients keep their compact chat target/input strip immediately
+                    // above the status bar. Older exports do not expose the modern
+                    // chat controls, so compose the strip from the legacy canvases.
+                    int chatWidth = Math.Min(566, Math.Max(280, legacyViewportWidth - 24));
+                    int chatHeight = 88;
+                    System.Drawing.Bitmap legacyChatRule = LoadCanvasBitmap(baseProperties?["chat"] as WzCanvasProperty);
+                    System.Drawing.Bitmap legacyChatTarget = LoadCanvasBitmap(baseProperties?["chatTarget"] as WzCanvasProperty);
+                    System.Drawing.Bitmap legacyChatBox = LoadCanvasBitmap(baseProperties?["box"] as WzCanvasProperty);
+                    using (var chatBitmap = new System.Drawing.Bitmap(chatWidth, chatHeight))
+                    using (var chatGraphics = System.Drawing.Graphics.FromImage(chatBitmap))
+                    {
+                        chatGraphics.Clear(System.Drawing.Color.FromArgb(205, 24, 29, 36));
+                        using (var borderPen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(180, 112, 122, 132)))
+                        {
+                            chatGraphics.DrawRectangle(borderPen, 0, 0, chatWidth - 1, chatHeight - 1);
+                        }
+                        if (legacyChatRule != null)
+                        {
+                            chatGraphics.DrawImage(legacyChatRule, new System.Drawing.Rectangle(0, chatHeight - legacyChatRule.Height - 20, chatWidth, legacyChatRule.Height));
+                        }
+
+                        int inputLeft = legacyChatTarget?.Width ?? 81;
+                        if (legacyChatBox != null && inputLeft < chatWidth)
+                        {
+                            chatGraphics.DrawImage(legacyChatBox, new System.Drawing.Rectangle(inputLeft, chatHeight - legacyChatBox.Height - 2, chatWidth - inputLeft, legacyChatBox.Height));
+                        }
+                        if (legacyChatTarget != null)
+                        {
+                            chatGraphics.DrawImageUnscaled(legacyChatTarget, 0, chatHeight - legacyChatTarget.Height - 2);
+                        }
+                        chatGraphics.Flush();
+                        Texture2D chatTexture = chatBitmap.ToTexture2DAndDispose(device);
+                        int chatX = Math.Max(0, legacyX + 8);
+                        int chatY = Math.Max(0, legacyY - chatHeight);
+                        StatusBarChatUI chatUI = new StatusBarChatUI(
+                            new DXObject(chatX, chatY, chatTexture, 0),
+                            new Point(chatX, chatY),
+                            new List<UIObject>());
+                        chatUI.SetLayoutMetrics(
+                            Point.Zero,
+                            new Vector2(4, chatHeight - 20),
+                            new Vector2(0, chatHeight - 20),
+                            new Vector2(inputLeft + 4, chatHeight - 18),
+                            new Vector2(8, chatHeight - 28),
+                            Math.Max(1, chatWidth - 16),
+                            new Rectangle(0, chatHeight - 20, chatWidth, 20),
+                            new Rectangle(0, 0, chatWidth, chatHeight - 20));
+                        var result = new Tuple<StatusBarUI, StatusBarChatUI>(statusBar, chatUI);
+                        _statusBarCache[statusBarCacheKey] = result;
+                        legacyChatRule?.Dispose();
+                        legacyChatTarget?.Dispose();
+                        legacyChatBox?.Dispose();
+                        return result;
+                    }
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Loads the V update StatusBar3 HUD.  StatusBar3 is not a variation of
+        /// StatusBar2: its name plate is left-bottom anchored, the HP/MP panel is
+        /// center-bottom anchored, and the EXP strip spans the viewport.  Build
+        /// one viewport-sized texture so those authored anchors remain stable
+        /// while StatusBarUI continues to provide text, gauges and interactions.
+        /// </summary>
+        private static Tuple<StatusBarUI, StatusBarChatUI> CreateStatusBar3FromProperty(
+            WzImage uiStatusBar3, WzImage uiBasic, WzImage uiBuffIcon,
+            GraphicsDevice device, RenderParameters renderParams, WzImage soundUIImage)
+        {
+            if (uiStatusBar3 == null || device == null)
+            {
+                return null;
+            }
+
+            int viewportWidth = Math.Max(1, (int)(renderParams.RenderWidth / Math.Max(0.01f, renderParams.RenderObjectScaling)));
+            int viewportHeight = Math.Max(1, (int)(renderParams.RenderHeight / Math.Max(0.01f, renderParams.RenderObjectScaling)));
+            WzSubProperty main = uiStatusBar3["main"] as WzSubProperty;
+            WzSubProperty status = main?["status"]?["normal"] as WzSubProperty;
+            WzSubProperty namePlate = main?["namePlate"] as WzSubProperty;
+            WzSubProperty expBar = main?["expBar"] as WzSubProperty;
+            if (status == null || namePlate == null || expBar == null)
+            {
+                return null;
+            }
+
+            WzCanvasProperty statusBackCanvas = status["backgrnd"] as WzCanvasProperty;
+            WzCanvasProperty statusCoverCanvas = status["layer:cover"] as WzCanvasProperty;
+            WzCanvasProperty nameBackCanvas = namePlate["backgrnd"] as WzCanvasProperty;
+            WzCanvasProperty nameLvCanvas = namePlate["layer:lv"] as WzCanvasProperty;
+            if (statusBackCanvas == null || nameBackCanvas == null)
+            {
+                return null;
+            }
+
+            using System.Drawing.Bitmap statusBack = LoadCanvasBitmap(statusBackCanvas);
+            using System.Drawing.Bitmap statusCover = LoadCanvasBitmap(statusCoverCanvas);
+            using System.Drawing.Bitmap nameBack = LoadCanvasBitmap(nameBackCanvas);
+            using System.Drawing.Bitmap nameLv = LoadCanvasBitmap(nameLvCanvas);
+            if (statusBack == null || nameBack == null)
+            {
+                return null;
+            }
+
+            // Authored positions are relative to the viewport edges/center.
+            int statusX = (viewportWidth / 2) - 98;
+            int frameHeight = 83;
+            int statusY = 24;   // viewport bottom - 59, frame top = bottom - 83
+            int nameY = 35;     // viewport bottom - 48
+            int expY = 72;       // viewport bottom - 11
+            var composedFrame = new System.Drawing.Bitmap(viewportWidth, frameHeight);
+            using (System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(composedFrame))
+            {
+                graphics.Clear(System.Drawing.Color.Transparent);
+                graphics.DrawImageUnscaled(nameBack, 0, nameY);
+                if (nameLv != null)
+                {
+                    Point levelPos = GetVector(namePlate["vector:levelPos"] as WzVectorProperty, new Point(28, 11));
+                    Point levelOrigin = GetCanvasOrigin(nameLvCanvas);
+                    graphics.DrawImageUnscaled(nameLv, levelPos.X - levelOrigin.X, nameY + levelPos.Y - levelOrigin.Y);
+                }
+
+                graphics.DrawImageUnscaled(statusBack, statusX, statusY);
+                if (statusCover != null)
+                {
+                    Point coverOrigin = GetCanvasOrigin(statusCoverCanvas);
+                    graphics.DrawImageUnscaled(statusCover, statusX - coverOrigin.X, statusY - coverOrigin.Y);
+                }
+
+                // EXPBar/1366, /1280, /1228 and /1920 are complete-width skins.
+                // Draw its static back line here; the gauge texture is clipped by
+                // StatusBarUI using the live EXP ratio below.
+                string expProfile = ResolveStatusBar3ResolutionProfile(expBar, viewportWidth);
+                WzSubProperty expProfileProperty = expBar[expProfile] as WzSubProperty;
+                WzCanvasProperty expBackCanvas = expProfileProperty?["layer:back"] as WzCanvasProperty;
+                using System.Drawing.Bitmap expBack = LoadCanvasBitmap(expBackCanvas);
+                if (expBack != null)
+                {
+                    Point expBackOrigin = GetCanvasOrigin(expBackCanvas);
+                    graphics.DrawImageUnscaled(expBack, -expBackOrigin.X, expY - expBackOrigin.Y);
+                }
+
+            }
+
+            Texture2D frameTexture = composedFrame.ToTexture2DAndDispose(device);
+            int frameY = Math.Max(0, viewportHeight - frameHeight);
+            IDXObject frameObject = new DXObject(0, frameY, frameTexture, 0);
+
+            WzBinaryProperty clickSound = soundUIImage?["BtMouseClick"] as WzBinaryProperty;
+            WzBinaryProperty overSound = soundUIImage?["BtMouseOver"] as WzBinaryProperty;
+            var menuButtons = new List<UIObject>();
+            WzSubProperty menu = uiStatusBar3["mainBar"]?["menu"] as WzSubProperty;
+            string[] menuNames = { "CashShop", "Event", "Character", "Community", "Setting", "Menu" };
+            for (int i = 0; i < menuNames.Length; i++)
+            {
+                WzSubProperty buttonProperty = menu?["button:" + menuNames[i]] as WzSubProperty;
+                if (buttonProperty == null)
+                {
+                    continue;
+                }
+
+                UIObject button = new UIObject(buttonProperty, clickSound, overSound, false, Point.Zero, device)
+                {
+                    // StatusBar3 places the six menu controls immediately to
+                    // the left of the centered HP/MP panel; keeping them at the
+                    // panel's right edge makes them disappear beneath the
+                    // status artwork at smaller simulator widths.
+                    X = statusX - ((menuNames.Length - i) * 35) - 8,
+                    Y = statusY
+                };
+                menuButtons.Add(button);
+            }
+
+            WzSubProperty gauge = status["gauge"] as WzSubProperty;
+            Texture2D hpTexture = LoadCanvasTexture(gauge?["hp"]?["layer:0"] as WzCanvasProperty, device);
+            Texture2D mpTexture = LoadCanvasTexture(gauge?["mp"]?["layer:0"] as WzCanvasProperty, device);
+            string expProfileName = ResolveStatusBar3ResolutionProfile(expBar, viewportWidth);
+            WzSubProperty expSkin = expBar[expProfileName] as WzSubProperty;
+            Texture2D expTexture = LoadCanvasTexture(expSkin?["layer:gauge"] as WzCanvasProperty, device);
+
+            StatusBarUI statusBar = new StatusBarUI(
+                frameObject,
+                null, null, null, null, null,
+                new Point(frameObject.X, frameObject.Y),
+                menuButtons);
+            statusBar.InitializeButtons();
+            statusBar.SetDynamicGaugeBarsEnabled(true);
+            statusBar.SetGaugeTextures(hpTexture, mpTexture, expTexture);
+            statusBar.SetGaugeBarLayout(
+                new Rectangle(statusX + 4, statusY + 4, 197, 17),
+                new Rectangle(statusX + 4, statusY + 25, 197, 17),
+                new Rectangle(0, expY + 1, viewportWidth, 9));
+            statusBar.SetLayoutMetrics(
+                new Point(-16, nameY + 3),
+                Point.Zero);
+            statusBar.SetGaugeTextAnchors(
+                new Vector2(statusX + 64, statusY + 4),
+                new Vector2(statusX + 64, statusY + 25),
+                new Vector2(0, expY + 1));
+            statusBar.SetLeftClusterWidth(250);
+            statusBar.SetBuffIconTextures(LoadBuffIconTextures(uiBuffIcon, device));
+            statusBar.SetCooldownMasks(LoadStatusBarCooldownMasks(device, isBigBang: true));
+            statusBar.SetTemporaryStatViewTexture(LoadStatusBarTemporaryStatViewTexture(device, isBigBang: true));
+            statusBar.SetTemporaryStatViewShadowTextures(LoadStatusBarTemporaryStatViewShadowTextures(device, isBigBang: true));
+            statusBar.SetTooltipTextures(LoadSkillTooltipTextures(device));
+            statusBar.SetTooltipOrigins(LoadSkillTooltipOrigins());
+            statusBar.SetWarningAnimations(
+                LoadStatusBarWarningAnimation(status["aniHPGauge"] as WzSubProperty, device),
+                LoadStatusBarWarningAnimation(status["aniMPGauge"] as WzSubProperty, device));
+            statusBar.SetKeyDownBarTextures(LoadKeyDownBarTextures(uiBasic, device));
+
+            LoadStatusBar3DigitTextures(statusBar, namePlate, gauge, device);
+            // StatusBar3's chat window is a separate full-screen surface. Let the
+            // existing chat owner remain absent until that surface is initialized;
+            // returning a legacy chat strip here would reintroduce StatusBar2 art.
+            return new Tuple<StatusBarUI, StatusBarChatUI>(statusBar, null);
+        }
+
+        private static string ResolveStatusBar3ResolutionProfile(WzSubProperty expBar, int viewportWidth)
+        {
+            if (expBar == null)
+            {
+                return "1366";
+            }
+
+            string[] profiles = { "1228", "1280", "1366", "1920" };
+            string exact = viewportWidth.ToString();
+            if (expBar[exact] != null)
+            {
+                return exact;
+            }
+
+            int nearest = profiles
+                .Where(profile => expBar[profile] != null)
+                .OrderBy(profile => Math.Abs(int.Parse(profile) - viewportWidth))
+                .Select(int.Parse)
+                .FirstOrDefault(1366);
+            return nearest.ToString();
+        }
+
+        private static Point GetVector(WzVectorProperty vector, Point fallback)
+        {
+            return vector == null
+                ? fallback
+                : new Point(vector.X.Value, vector.Y.Value);
+        }
+
+        private static void LoadStatusBar3DigitTextures(StatusBarUI statusBar, WzSubProperty namePlate, WzSubProperty gauge, GraphicsDevice device)
+        {
+            if (statusBar == null || device == null)
+            {
+                return;
+            }
+
+            Point GetOrigin(WzCanvasProperty canvas) => GetCanvasOrigin(canvas);
+            Texture2D[] digits = new Texture2D[10];
+            Point[] origins = new Point[10];
+            Texture2D[] levelDigits = new Texture2D[10];
+            Point[] levelOrigins = new Point[10];
+            bool hasDigits = false;
+            for (int i = 0; i < 10; i++)
+            {
+                WzCanvasProperty canvas = gauge?["number"]?[i.ToString()] as WzCanvasProperty;
+                digits[i] = LoadCanvasTexture(canvas, device);
+                origins[i] = GetOrigin(canvas);
+                hasDigits |= digits[i] != null;
+
+                WzCanvasProperty levelCanvas = namePlate?["levelNum"]?[i.ToString()] as WzCanvasProperty;
+                levelDigits[i] = LoadCanvasTexture(levelCanvas, device);
+                levelOrigins[i] = GetOrigin(levelCanvas);
+            }
+
+            Texture2D slash = LoadCanvasTexture(gauge?["number"]?["\\"] as WzCanvasProperty, device);
+            Point slashOrigin = GetOrigin(gauge?["number"]?["\\"] as WzCanvasProperty);
+            if (!hasDigits)
+            {
+                return;
+            }
+
+            statusBar.SetDigitTextures(
+                digits, origins,
+                slash, slashOrigin,
+                null, Point.Zero,
+                null, Point.Zero,
+                null, Point.Zero,
+                null, Point.Zero);
+            if (levelDigits.Any(texture => texture != null))
+            {
+                statusBar.SetLevelDigitTextures(levelDigits, levelOrigins);
+            }
         }
 
         private static Dictionary<string, Texture2D> LoadBuffIconTextures(WzImage uiBuffIcon, GraphicsDevice device)
@@ -1449,6 +1740,53 @@ namespace HaCreator.MapSimulator.Loaders
             return composed;
         }
 
+        private static System.Drawing.Bitmap ComposeLegacyStatusBarFrame(
+            System.Drawing.Bitmap backgrnd,
+            System.Drawing.Bitmap backgrnd2,
+            System.Drawing.Bitmap gaugeBar,
+            System.Drawing.Bitmap gaugeGraduation,
+            int viewportWidth)
+        {
+            if (backgrnd == null)
+            {
+                return null;
+            }
+
+            int composedWidth = Math.Max(backgrnd.Width, viewportWidth);
+            var composed = new System.Drawing.Bitmap(composedWidth, backgrnd.Height);
+            using (System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(composed))
+            {
+                graphics.Clear(System.Drawing.Color.Transparent);
+                // backgrnd is a tiled client surface rather than a centered
+                // dialog. Repeat it so wide simulator viewports have no gaps.
+                for (int x = 0; x < composedWidth; x += backgrnd.Width)
+                {
+                    graphics.DrawImageUnscaled(backgrnd, x, 0);
+                }
+
+                // The legacy backgrnd2 contains the left LV/name panel and is an
+                // overlay, not a second centered frame.
+                if (backgrnd2 != null)
+                {
+                    graphics.DrawImageUnscaled(backgrnd2, 0, 0);
+                }
+
+                // StatusBar.img places the 340x31 gauge artwork at this
+                // fixed slot; graduation is the topmost layer.
+                if (gaugeBar != null)
+                {
+                    graphics.DrawImageUnscaled(gaugeBar, LegacyStatusBarLayout.GaugeOrigin.X, LegacyStatusBarLayout.GaugeOrigin.Y);
+                }
+
+                if (gaugeGraduation != null)
+                {
+                    graphics.DrawImageUnscaled(gaugeGraduation, LegacyStatusBarLayout.GaugeOrigin.X, LegacyStatusBarLayout.GaugeOrigin.Y);
+                }
+            }
+
+            return composed;
+        }
+
         private static Point ResolveBigBangChatFrameAnchorOrigin(WzCanvasProperty chatSpace2Canvas, WzCanvasProperty chatSpaceCanvas)
         {
             if (chatSpace2Canvas != null)
@@ -1457,6 +1795,33 @@ namespace HaCreator.MapSimulator.Loaders
             }
 
             return GetCanvasOrigin(chatSpaceCanvas);
+        }
+
+        private static bool HasDrawableUiButtonState(WzSubProperty buttonProperty)
+        {
+            if (buttonProperty == null)
+            {
+                return false;
+            }
+
+            string[] stateNames = { "normal", "pressed", "mouseOver", "disabled" };
+            foreach (string stateName in stateNames)
+            {
+                if (buttonProperty[stateName] is not WzSubProperty state)
+                {
+                    continue;
+                }
+
+                for (int frame = 0; state[frame.ToString()] != null; frame++)
+                {
+                    if (state[frame.ToString()] is WzCanvasProperty canvas && canvas.GetLinkedWzCanvasBitmap() != null)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static int ResolveBigBangStatusBarClusterWidth(
@@ -2913,6 +3278,15 @@ namespace HaCreator.MapSimulator.Loaders
             GraphicsDevice device, float UserScreenScaleFactor, string MapName, string StreetName,
             WzImage soundUIImage, bool bBigBang)
         {
+            return CreateMinimapFromProperty(uiWindow1Image, uiWindow2Image, null, uiBasicImage, mapBoard,
+                device, UserScreenScaleFactor, MapName, StreetName, soundUIImage, bBigBang);
+        }
+
+        public static MinimapUI CreateMinimapFromProperty(
+            WzImage uiWindow1Image, WzImage uiWindow2Image, WzImage uiMapImage, WzImage uiBasicImage, Board mapBoard,
+            GraphicsDevice device, float UserScreenScaleFactor, string MapName, string StreetName,
+            WzImage soundUIImage, bool bBigBang)
+        {
             if (mapBoard.MiniMap == null)
                 return null;
 
@@ -2923,7 +3297,8 @@ namespace HaCreator.MapSimulator.Loaders
                 return cachedMinimap;
             }
 
-            WzSubProperty minimapFrameProperty = (WzSubProperty)uiWindow2Image?["MiniMap"];
+            WzSubProperty minimapFrameProperty = (WzSubProperty)uiMapImage?["MiniMap"]
+                ?? (WzSubProperty)uiWindow2Image?["MiniMap"];
             if (minimapFrameProperty == null) // UIWindow2 not available pre-BB.
             {
                 minimapFrameProperty = (WzSubProperty)uiWindow1Image["MiniMap"];
@@ -2982,6 +3357,27 @@ namespace HaCreator.MapSimulator.Loaders
             // Map background image
             // Using HaUIGrid and HaUIStackPanel
             System.Drawing.Bitmap miniMapImage = mapBoard.MiniMap; // the original minimap image without UI frame overlay
+            // Pre-Big-Bang clients use a small fixed minimap viewport.  Some
+            // exported maps contain a large editor-sized bitmap; clamp it before
+            // composing the 9-slice chrome so the in-game window remains faithful
+            // to the legacy proportions.
+            System.Drawing.Bitmap legacyMiniMapImage = null;
+            if (!bBigBang && (miniMapImage.Width > 300 || miniMapImage.Height > 190))
+            {
+                const int maxWidth = 300;
+                const int maxHeight = 190;
+                float scale = Math.Min((float)maxWidth / miniMapImage.Width, (float)maxHeight / miniMapImage.Height);
+                int width = Math.Max(1, (int)Math.Round(miniMapImage.Width * scale));
+                int height = Math.Max(1, (int)Math.Round(miniMapImage.Height * scale));
+                legacyMiniMapImage = new System.Drawing.Bitmap(width, height);
+                using (var graphics = System.Drawing.Graphics.FromImage(legacyMiniMapImage))
+                {
+                    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    graphics.DrawImage(miniMapImage, new System.Drawing.Rectangle(0, 0, width, height));
+                    graphics.Flush();
+                }
+                miniMapImage = legacyMiniMapImage;
+            }
 
 
             // Create Map mark
@@ -3103,6 +3499,16 @@ namespace HaCreator.MapSimulator.Loaders
             System.Drawing.Bitmap finalExpandedMinimapBitmap = HaUIHelper.RenderAndMergeMinimapUIFrame(fullMiniMapStackPanel, color_bgFill, expandedNe, expandedNw, expandedSe, expandedSw, expandedE, expandedW, expandedN, expandedS,
                 expandedC, mapMark != null ? mapMark.Height : 0);
 
+            // Resolve embedded-map offsets while the composed System.Drawing
+            // bitmaps are still alive. ToTexture2DAndDispose below invalidates
+            // them after uploading to the graphics device.
+            HaUISize fullMiniMapStackPanelSize = fullMiniMapStackPanel.GetSize();
+            int alignmentXOffset = HaUIHelper.CalculateAlignmentOffset(fullMiniMapStackPanelSize.Width, minimapUiImage.GetInfo().Bitmap.Width, minimapUiGrid.GetInfo().HorizontalAlignment);
+            Point compactFallbackOffset = new Point(MAP_IMAGE_TEXT_PADDING + alignmentXOffset, compactN?.Height ?? 0);
+            Point expandedFallbackOffset = new Point(MAP_IMAGE_TEXT_PADDING + alignmentXOffset, expandedN?.Height ?? 0);
+            Point compactMinimapImageOffset = ResolveMinimapImageOffset(finalCompactMinimapBitmap, miniMapImage, compactFallbackOffset);
+            Point expandedMinimapImageOffset = ResolveMinimapImageOffset(finalExpandedMinimapBitmap, miniMapImage, expandedFallbackOffset);
+
             Texture2D texturer_miniMapMinimised = finalMininisedMinimapBitmap.ToTexture2DAndDispose(device);
             Texture2D texturer_miniMapCompact = finalCompactMinimapBitmap.ToTexture2DAndDispose(device);
             Texture2D texturer_miniMapExpanded = finalExpandedMinimapBitmap.ToTexture2DAndDispose(device);
@@ -3121,15 +3527,6 @@ namespace HaCreator.MapSimulator.Loaders
             IDXObject dxObj_miniMap = new DXObject(0, 0, texturer_miniMapCompact, 0);
             IDXObject dxObj_miniMapExpanded = new DXObject(0, 0, texturer_miniMapExpanded, 0);
 
-            // need to calculate how much x position, where the map is shifted to the center by HorizontalAlignment
-            // to compensate for in the character dot position indicator
-            HaUISize fullMiniMapStackPanelSize = fullMiniMapStackPanel.GetSize();
-            int alignmentXOffset = HaUIHelper.CalculateAlignmentOffset(fullMiniMapStackPanelSize.Width, minimapUiImage.GetInfo().Bitmap.Width, minimapUiGrid.GetInfo().HorizontalAlignment);
-
-            Point compactFallbackOffset = new Point(MAP_IMAGE_TEXT_PADDING + alignmentXOffset, compactN?.Height ?? 0);
-            Point expandedFallbackOffset = new Point(MAP_IMAGE_TEXT_PADDING + alignmentXOffset, expandedN?.Height ?? 0);
-            Point compactMinimapImageOffset = ResolveMinimapImageOffset(finalCompactMinimapBitmap, miniMapImage, compactFallbackOffset);
-            Point expandedMinimapImageOffset = ResolveMinimapImageOffset(finalExpandedMinimapBitmap, miniMapImage, expandedFallbackOffset);
             BaseDXDrawableItem userMarker = null;
             BaseDXDrawableItem npcMarker = null;
             BaseDXDrawableItem questStartNpcMarker = null;
@@ -3139,7 +3536,8 @@ namespace HaCreator.MapSimulator.Loaders
             Dictionary<MinimapUI.DirectionArrow, BaseDXDrawableItem> directionMarkers = new Dictionary<MinimapUI.DirectionArrow, BaseDXDrawableItem>();
             Dictionary<MinimapUI.HelperMarkerType, BaseDXDrawableItem> helperMarkers = new Dictionary<MinimapUI.HelperMarkerType, BaseDXDrawableItem>();
 
-            WzSubProperty minimapSimpleModeProperty = uiWindow2Image?["MiniMapSimpleMode"] as WzSubProperty;
+            WzSubProperty minimapSimpleModeProperty = uiMapImage?["MiniMapSimpleMode"] as WzSubProperty
+                ?? uiWindow2Image?["MiniMapSimpleMode"] as WzSubProperty;
             WzSubProperty defaultHelperProperty = minimapSimpleModeProperty?["DefaultHelper"] as WzSubProperty;
 
             WzCanvasProperty userCanvas = defaultHelperProperty?["user"] as WzCanvasProperty;
@@ -3411,6 +3809,7 @@ namespace HaCreator.MapSimulator.Loaders
                 portalMarker,
                 directionMarkers,
                 helperMarkers);
+            legacyMiniMapImage?.Dispose();
             minimapItem.SetCollapsedButtonChromeMetrics(
                 collapsedTitleChromeMetrics.RightInset,
                 collapsedButtonChromeMetrics.LaneTop,
@@ -3429,10 +3828,25 @@ namespace HaCreator.MapSimulator.Loaders
             if (bBigBang)
             {
                 WzSubProperty BtNpc = (WzSubProperty)minimapFrameProperty["BtNpc"]; // npc button
-                WzSubProperty BtMin = (WzSubProperty)minimapFrameProperty["BtMin"]; // mininise button
-                WzSubProperty BtMax = (WzSubProperty)minimapFrameProperty["BtMax"]; // maximise button
-                WzSubProperty BtBig = (WzSubProperty)minimapFrameProperty["BtBig"]; // big button
+                WzSubProperty BtMin = (WzSubProperty)minimapFrameProperty["BtMin"]
+                    ?? (WzSubProperty)minimapFrameProperty["button:min"]; // minimise button
+                WzSubProperty BtMax = (WzSubProperty)minimapFrameProperty["BtMax"]
+                    ?? (WzSubProperty)minimapFrameProperty["button:max"]; // maximise button
+                WzSubProperty BtBig = (WzSubProperty)minimapFrameProperty["BtBig"]
+                    ?? (WzSubProperty)minimapFrameProperty["button:big"]; // expand button
                 WzSubProperty BtMap = (WzSubProperty)minimapFrameProperty["BtMap"]; // world button
+
+                // Modern UIMap/MiniMap exports may retain button metadata without
+                // any numbered canvas frames. UIObject quite correctly rejects
+                // those as drawable controls; the minimap itself remains usable
+                // without the optional chrome buttons.
+                if (!HasDrawableUiButtonState(BtMap) ||
+                    !HasDrawableUiButtonState(BtMax) ||
+                    !HasDrawableUiButtonState(BtMin))
+                {
+                    minimapItem.InitializeMinimapButtons(null, null, null, null, null);
+                    return minimapItem;
+                }
 
                 UIObject objUIBtMap = new UIObject(BtMap, BtMouseClickSoundProperty, BtMouseOverSoundProperty,
                     false,
@@ -3448,7 +3862,8 @@ namespace HaCreator.MapSimulator.Loaders
                     objUIBtBig.X = objUIBtMap.X - objUIBtBig.CanvasSnapshotWidth;
                 }
 
-                WzSubProperty BtSmall = (WzSubProperty)minimapFrameProperty["BtSmall"];
+                WzSubProperty BtSmall = (WzSubProperty)minimapFrameProperty["BtSmall"]
+                    ?? (WzSubProperty)minimapFrameProperty["button:small"];
                 UIObject objUIBtSmall = null;
                 if (BtSmall != null)
                 {

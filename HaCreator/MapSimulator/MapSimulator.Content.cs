@@ -195,6 +195,7 @@ namespace HaCreator.MapSimulator
             WzImage uiLoginImage = Program.FindImage("UI", "Login.img");
             WzImage uiWindow1Image = Program.FindImage("UI", "UIWindow.img"); //
             WzImage uiWindow2Image = Program.FindImage("UI", "UIWindow2.img"); // doesnt exist before big-bang
+            WzImage uiMapImage = Program.FindImage("UI", "UIMap.img");
             WzImage uiMapleTvImage = Program.FindImage("UI", "MapleTV.img");
             WzImage uiGuildBbsImage = Program.FindImage("UI", "GuildBBS.img");
             WzImage uiBuffIconImage = Program.FindImage("UI", "BuffIcon.img");
@@ -203,6 +204,7 @@ namespace HaCreator.MapSimulator
             WzImage uiStatusBarImage = Program.FindImage("UI", "StatusBar.img");
 
             WzImage uiStatus2BarImage = Program.FindImage("UI", "StatusBar2.img");
+            WzImage uiStatus3BarImage = Program.FindImage("UI", "StatusBar3.img");
 
 
 
@@ -223,7 +225,11 @@ namespace HaCreator.MapSimulator
             catch { }
 
 
-            _gameState.IsBigBangUpdate = WzFileManager.IsBigBangUpdate(uiWindow2Image); // different rendering for pre and post-bb, to support multiple vers
+            _gameState.UiFamily = MapSimulatorUiFamilyResolver.ResolveFromStatusBarImages(
+                hasStatusBar: uiStatusBarImage != null,
+                hasStatusBar2: uiStatus2BarImage != null,
+                hasStatusBar3: uiStatus3BarImage != null);
+            _gameState.IsBigBangUpdate = _gameState.UiFamily != MapSimulatorUiFamily.LegacyPreBigBang;
 
             _gameState.IsBigBang2Update = WzFileManager.IsBigBang2Update(uiWindow2Image); // chaos update
             LogStartupCheckpoint("LoadContent resolved shared WZ/UI references");
@@ -603,7 +609,7 @@ namespace HaCreator.MapSimulator
                     _gameState.IsCashShopMap,
                     _mapBoard.MapInfo))
                 {
-                    miniMapUi = MapSimulatorLoader.CreateMinimapFromProperty(uiWindow1Image, uiWindow2Image, uiBasicImage, _mapBoard, GraphicsDevice, UserScreenScaleFactor, _mapBoard.MapInfo.strMapName, _mapBoard.MapInfo.strStreetName, soundUIImage, _gameState.IsBigBangUpdate);
+                    miniMapUi = MapSimulatorLoader.CreateMinimapFromProperty(uiWindow1Image, uiWindow2Image, uiMapImage, uiBasicImage, _mapBoard, GraphicsDevice, UserScreenScaleFactor, _mapBoard.MapInfo.strMapName, _mapBoard.MapInfo.strStreetName, soundUIImage, _gameState.IsBigBangUpdate);
                     miniMapUi?.ReloadMiniMap(_packetOwnedMiniMapOnOffVisible);
                     if (_packetFieldUtilityMinimapHiddenByAdminResult)
                     {
@@ -619,7 +625,7 @@ namespace HaCreator.MapSimulator
             Task t_statusBar = Task.Run(() => {
                 Stopwatch taskStopwatch = Stopwatch.StartNew();
                 if (!_gameState.IsLoginMap && !_gameState.IsCashShopMap) {
-                    Tuple<StatusBarUI, StatusBarChatUI> statusBar = MapSimulatorLoader.CreateStatusBarFromProperty(uiStatusBarImage, uiStatus2BarImage, uiBasicImage, uiBuffIconImage, _mapBoard, GraphicsDevice, UserScreenScaleFactor, _renderParams, soundUIImage, _gameState.IsBigBangUpdate);
+                    Tuple<StatusBarUI, StatusBarChatUI> statusBar = MapSimulatorLoader.CreateStatusBarFromProperty(uiStatusBarImage, uiStatus2BarImage, uiStatus3BarImage, uiBasicImage, uiBuffIconImage, _mapBoard, GraphicsDevice, UserScreenScaleFactor, _renderParams, soundUIImage, _gameState.IsBigBangUpdate);
                     if (statusBar != null) {
                         statusBarUi = statusBar.Item1;
                         statusBarChatUI = statusBar.Item2;
@@ -1538,11 +1544,13 @@ namespace HaCreator.MapSimulator
             WzImage uiLoginImage = Program.FindImage("UI", "Login.img");
             WzImage uiWindow1Image = Program.FindImage("UI", "UIWindow.img");
             WzImage uiWindow2Image = Program.FindImage("UI", "UIWindow2.img");
+            WzImage uiMapImage = Program.FindImage("UI", "UIMap.img");
             WzImage uiMapleTvImage = Program.FindImage("UI", "MapleTV.img");
             WzImage uiGuildBbsImage = Program.FindImage("UI", "GuildBBS.img");
             WzImage uiBuffIconImage = Program.FindImage("UI", "BuffIcon.img");
             WzImage uiStatusBarImage = Program.FindImage("UI", "StatusBar.img");
             WzImage uiStatus2BarImage = Program.FindImage("UI", "StatusBar2.img");
+            WzImage uiStatus3BarImage = Program.FindImage("UI", "StatusBar3.img");
 
 
             // Skill.wz and String.wz for skill window content
@@ -1761,7 +1769,7 @@ namespace HaCreator.MapSimulator
                     _gameState.IsCashShopMap,
                     _mapBoard.MapInfo))
                 {
-                    miniMapUi = MapSimulatorLoader.CreateMinimapFromProperty(uiWindow1Image, uiWindow2Image, uiBasicImage, _mapBoard, GraphicsDevice, UserScreenScaleFactor, _mapBoard.MapInfo.strMapName, _mapBoard.MapInfo.strStreetName, soundUIImage, _gameState.IsBigBangUpdate);
+                    miniMapUi = MapSimulatorLoader.CreateMinimapFromProperty(uiWindow1Image, uiWindow2Image, uiMapImage, uiBasicImage, _mapBoard, GraphicsDevice, UserScreenScaleFactor, _mapBoard.MapInfo.strMapName, _mapBoard.MapInfo.strStreetName, soundUIImage, _gameState.IsBigBangUpdate);
                     miniMapUi?.ReloadMiniMap(_packetOwnedMiniMapOnOffVisible);
                     if (_packetFieldUtilityMinimapHiddenByAdminResult)
                     {
@@ -1778,7 +1786,7 @@ namespace HaCreator.MapSimulator
                 Stopwatch taskStopwatch = Stopwatch.StartNew();
                 if (!_gameState.IsLoginMap && !_gameState.IsCashShopMap)
                 {
-                    Tuple<StatusBarUI, StatusBarChatUI> statusBar = MapSimulatorLoader.CreateStatusBarFromProperty(uiStatusBarImage, uiStatus2BarImage, uiBasicImage, uiBuffIconImage, _mapBoard, GraphicsDevice, UserScreenScaleFactor, _renderParams, soundUIImage, _gameState.IsBigBangUpdate);
+                    Tuple<StatusBarUI, StatusBarChatUI> statusBar = MapSimulatorLoader.CreateStatusBarFromProperty(uiStatusBarImage, uiStatus2BarImage, uiStatus3BarImage, uiBasicImage, uiBuffIconImage, _mapBoard, GraphicsDevice, UserScreenScaleFactor, _renderParams, soundUIImage, _gameState.IsBigBangUpdate);
                     if (statusBar != null)
                     {
                         statusBarUi = statusBar.Item1;

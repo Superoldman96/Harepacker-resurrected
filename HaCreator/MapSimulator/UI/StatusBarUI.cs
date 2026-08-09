@@ -248,6 +248,14 @@ namespace HaCreator.MapSimulator.UI {
         private Texture2D _hpGaugeTexture;
         private Texture2D _mpGaugeTexture;
         private Texture2D _expGaugeTexture;
+        private Rectangle _hpGaugeRect = HP_GAUGE_RECT;
+        private Rectangle _mpGaugeRect = MP_GAUGE_RECT;
+        private Rectangle _expGaugeRect = EXP_GAUGE_RECT;
+        // Legacy StatusBar.img skins contain their gauge artwork in the static
+        // frame.  Keep the modern dynamic gauge renderer opt-in for those skins
+        // so the full-width legacy gauge/bar texture is not squashed into the
+        // post-Big Bang gauge rectangles.
+        private bool _dynamicGaugeBarsEnabled = true;
 
         // Bitmap font textures for MapleStory-style numbers
         // Loaded from UI.wz/Basic.img/ItemNo/ (digits 0-9, slash, percent, etc.)
@@ -306,9 +314,10 @@ namespace HaCreator.MapSimulator.UI {
         //   Level: (45, 10), Job: (75, 7), Name: (75, 19)
 
         // lvBacktrnd area (left side - character info)
-        private static readonly Vector2 LEVEL_TEXT_POS = new Vector2(44, 8);
-        private static readonly Vector2 JOB_TEXT_POS = new Vector2(74, 5);
-        private static readonly Vector2 NAME_TEXT_POS = new Vector2(74, 17);
+        private Vector2 _levelTextPos = new Vector2(44, 8);
+        private Vector2 _jobTextPos = new Vector2(74, 5);
+        private Vector2 _nameTextPos = new Vector2(74, 17);
+        private float _levelTextScale = 1.0f;
         private const float JOB_TEXT_SCALE = 1.0f;
         private const float NAME_TEXT_SCALE = 1.0f;
         private const float JOB_TEXT_FONT_PIXEL_SIZE = 9f;
@@ -492,7 +501,7 @@ namespace HaCreator.MapSimulator.UI {
 
         public void SetLeftClusterWidth(int leftClusterWidth)
         {
-            if (leftClusterWidth <= NAME_TEXT_POS.X + 8f)
+            if (leftClusterWidth <= _nameTextPos.X + 8f)
             {
                 _jobTextMaxWidth = JOB_TEXT_MAX_WIDTH;
                 _nameTextMaxWidth = DEFAULT_NAME_TEXT_MAX_WIDTH;
@@ -501,11 +510,11 @@ namespace HaCreator.MapSimulator.UI {
 
             _jobTextMaxWidth = StatusBarLayoutRules.ResolveLeftClusterJobTextMaxWidth(
                 leftClusterWidth,
-                JOB_TEXT_POS.X,
+                _jobTextPos.X,
                 JOB_TEXT_MAX_WIDTH);
             _nameTextMaxWidth = StatusBarLayoutRules.ResolveLeftClusterNameTextMaxWidth(
                 leftClusterWidth,
-                NAME_TEXT_POS.X,
+                _nameTextPos.X,
                 DEFAULT_NAME_TEXT_MAX_WIDTH);
         }
 
@@ -515,6 +524,12 @@ namespace HaCreator.MapSimulator.UI {
         public Action MenuRequested { get; set; }
         public Action SystemRequested { get; set; }
         public Action ChannelRequested { get; set; }
+        public Action EquipmentRequested { get; set; }
+        public Action InventoryRequested { get; set; }
+        public Action AbilityRequested { get; set; }
+        public Action SkillsRequested { get; set; }
+        public Action KeyConfigRequested { get; set; }
+        public Action QuickSlotRequested { get; set; }
 
         public void SetChannelButtonEnabled(bool enabled)
         {
@@ -563,6 +578,27 @@ namespace HaCreator.MapSimulator.UI {
             _hpGaugeTexture = hpGauge;
             _mpGaugeTexture = mpGauge;
             _expGaugeTexture = expGauge;
+        }
+
+        /// <summary>
+        /// Overrides the client-authored gauge slots for alternate status-bar
+        /// skins (for example StatusBar3). Empty rectangles disable that gauge.
+        /// </summary>
+        public void SetGaugeBarLayout(Rectangle hpRect, Rectangle mpRect, Rectangle expRect)
+        {
+            _hpGaugeRect = hpRect;
+            _mpGaugeRect = mpRect;
+            _expGaugeRect = expRect;
+        }
+
+        /// <summary>
+        /// Enables or disables the dynamic HP/MP/EXP gauge renderer.  Legacy
+        /// StatusBar.img frames already contain the gauge artwork and should
+        /// disable this overlay; post-Big Bang StatusBar2.img keeps it enabled.
+        /// </summary>
+        public void SetDynamicGaugeBarsEnabled(bool enabled)
+        {
+            _dynamicGaugeBarsEnabled = enabled;
         }
 
         public void SetBuffIconTextures(Dictionary<string, Texture2D> buffIconTextures)
@@ -723,6 +759,43 @@ namespace HaCreator.MapSimulator.UI {
             //objUIBtMax.SetButtonState(UIObjectState.Disabled); // start maximised
         }
 
+        public void SetCharacterInfoLayout(Point levelOffset, Point jobOffset, Point nameOffset, float levelScale)
+        {
+            _levelTextPos = levelOffset.ToVector2();
+            _jobTextPos = jobOffset.ToVector2();
+            _nameTextPos = nameOffset.ToVector2();
+            _levelTextScale = Math.Max(0.1f, levelScale);
+        }
+
+        /// <summary>
+        /// Binds the seven shortcut-key controls used by the legacy
+        /// StatusBar.img skin. The modern StatusBar2 shortcut strip is wired by
+        /// StatusBarChatUI, so this seam is intentionally legacy-only.
+        /// </summary>
+        public void BindLegacyShortcutButtons(IReadOnlyList<UIObject> buttons)
+        {
+            if (buttons == null)
+                return;
+
+            Action[] actions =
+            {
+                () => EquipmentRequested?.Invoke(),
+                () => InventoryRequested?.Invoke(),
+                () => AbilityRequested?.Invoke(),
+                () => SkillsRequested?.Invoke(),
+                () => KeyConfigRequested?.Invoke(),
+                () => QuickSlotRequested?.Invoke(),
+                () => QuickSlotRequested?.Invoke()
+            };
+            for (int i = 0; i < Math.Min(buttons.Count, actions.Length); i++)
+            {
+                UIObject button = buttons[i];
+                Action action = actions[i];
+                if (button != null)
+                    button.ButtonClickReleased += _ => action();
+            }
+        }
+
         /// <summary>
         /// Draw
         /// </summary>
@@ -875,19 +948,19 @@ namespace HaCreator.MapSimulator.UI {
             Vector2 levelPos = GetClientLevelTextPosition(basePosLeft, levelText);
             if (_useLevelBitmapFont)
             {
-                DrawDigitBitmapString(sprite, levelText, levelPos, _levelDigitTextures, _levelDigitOrigins, 1.0f);
+                DrawDigitBitmapString(sprite, levelText, levelPos, _levelDigitTextures, _levelDigitOrigins, _levelTextScale);
             }
             else
             {
-                DrawTextWithShadow(sprite, levelText, levelPos, Color.White, Color.Black);
+                DrawTextWithShadow(sprite, levelText, levelPos, Color.White, Color.Black, _levelTextScale);
             }
 
             // Job name
-            Vector2 jobPos = SnapToPixel(basePosLeft + JOB_TEXT_POS);
+            Vector2 jobPos = SnapToPixel(basePosLeft + _jobTextPos);
             DrawJobText(sprite, StatusBarLayoutRules.FormatJobLabel(stats.Job), jobPos, _jobTextMaxWidth);
 
             // Character name - drawn with shadow effect (from IDA: multiple positions for shadow)
-            Vector2 namePos = SnapToPixel(basePosLeft + NAME_TEXT_POS);
+            Vector2 namePos = SnapToPixel(basePosLeft + _nameTextPos);
             DrawNameText(sprite, StatusBarLayoutRules.FormatNameLabel(stats.Name), namePos, _nameTextMaxWidth);
 
             // Draw gauge text section (HP/MP/EXP area) - use basePosGauge
@@ -928,6 +1001,11 @@ namespace HaCreator.MapSimulator.UI {
         /// Uses actual gauge textures from UI.wz when available, falls back to colored rectangles.
         /// </summary>
         private void DrawGaugeBars(SpriteBatch sprite, CharacterStatsData stats, Vector2 basePos, int currentTime) {
+            if (!_dynamicGaugeBarsEnabled)
+            {
+                return;
+            }
+
             // Calculate fill ratios
             float hpRatio = stats.MaxHP > 0 ? (float)stats.HP / stats.MaxHP : 0f;
             float mpRatio = stats.MaxMP > 0 ? (float)stats.MP / stats.MaxMP : 0f;
@@ -939,26 +1017,28 @@ namespace HaCreator.MapSimulator.UI {
             expRatio = Math.Clamp(expRatio, 0f, 1f);
 
             // Draw HP gauge - use texture if available, use predefined gauge rect for positioning
-            if (_hpGaugeTexture != null) {
-                DrawTexturedGauge(sprite, basePos, HP_GAUGE_RECT, hpRatio, _hpGaugeTexture);
-            } else if (_pixelTexture != null) {
-                DrawGaugeBar(sprite, basePos, HP_GAUGE_RECT, hpRatio, HP_GAUGE_COLOR, HP_GAUGE_BG_COLOR);
+            if (_hpGaugeRect.Width > 0 && _hpGaugeRect.Height > 0 && _hpGaugeTexture != null) {
+                DrawTexturedGauge(sprite, basePos, _hpGaugeRect, hpRatio, _hpGaugeTexture);
+            } else if (_hpGaugeRect.Width > 0 && _hpGaugeRect.Height > 0 && _pixelTexture != null) {
+                DrawGaugeBar(sprite, basePos, _hpGaugeRect, hpRatio, HP_GAUGE_COLOR, HP_GAUGE_BG_COLOR);
             }
-            DrawWarningAnimation(sprite, basePos, HP_GAUGE_RECT, _hpWarningAnimation, currentTime, _hpFlashStartTime, _hpFlashEndTime, new Color(255, 88, 88, 180));
+            if (_hpGaugeRect.Width > 0 && _hpGaugeRect.Height > 0)
+                DrawWarningAnimation(sprite, basePos, _hpGaugeRect, _hpWarningAnimation, currentTime, _hpFlashStartTime, _hpFlashEndTime, new Color(255, 88, 88, 180));
 
             // Draw MP gauge
-            if (_mpGaugeTexture != null) {
-                DrawTexturedGauge(sprite, basePos, MP_GAUGE_RECT, mpRatio, _mpGaugeTexture);
-            } else if (_pixelTexture != null) {
-                DrawGaugeBar(sprite, basePos, MP_GAUGE_RECT, mpRatio, MP_GAUGE_COLOR, MP_GAUGE_BG_COLOR);
+            if (_mpGaugeRect.Width > 0 && _mpGaugeRect.Height > 0 && _mpGaugeTexture != null) {
+                DrawTexturedGauge(sprite, basePos, _mpGaugeRect, mpRatio, _mpGaugeTexture);
+            } else if (_mpGaugeRect.Width > 0 && _mpGaugeRect.Height > 0 && _pixelTexture != null) {
+                DrawGaugeBar(sprite, basePos, _mpGaugeRect, mpRatio, MP_GAUGE_COLOR, MP_GAUGE_BG_COLOR);
             }
-            DrawWarningAnimation(sprite, basePos, MP_GAUGE_RECT, _mpWarningAnimation, currentTime, _mpFlashStartTime, _mpFlashEndTime, new Color(128, 180, 255, 180));
+            if (_mpGaugeRect.Width > 0 && _mpGaugeRect.Height > 0)
+                DrawWarningAnimation(sprite, basePos, _mpGaugeRect, _mpWarningAnimation, currentTime, _mpFlashStartTime, _mpFlashEndTime, new Color(128, 180, 255, 180));
 
             // Draw EXP gauge
-            if (_expGaugeTexture != null) {
-                DrawTexturedGauge(sprite, basePos, EXP_GAUGE_RECT, expRatio, _expGaugeTexture);
-            } else if (_pixelTexture != null) {
-                DrawGaugeBar(sprite, basePos, EXP_GAUGE_RECT, expRatio, EXP_GAUGE_COLOR, EXP_GAUGE_BG_COLOR);
+            if (_expGaugeRect.Width > 0 && _expGaugeRect.Height > 0 && _expGaugeTexture != null) {
+                DrawTexturedGauge(sprite, basePos, _expGaugeRect, expRatio, _expGaugeTexture);
+            } else if (_expGaugeRect.Width > 0 && _expGaugeRect.Height > 0 && _pixelTexture != null) {
+                DrawGaugeBar(sprite, basePos, _expGaugeRect, expRatio, EXP_GAUGE_COLOR, EXP_GAUGE_BG_COLOR);
             }
         }
 
@@ -2556,7 +2636,7 @@ namespace HaCreator.MapSimulator.UI {
             float clientSlotX = StatusBarLayoutRules.ResolveLevelSlotX(levelText);
             return SnapToPixel(new Vector2(
                 basePosLeft.X + clientSlotX,
-                basePosLeft.Y + LEVEL_TEXT_POS.Y));
+                basePosLeft.Y + _levelTextPos.Y));
         }
 
         private static Vector2 SnapToPixel(Vector2 position)
