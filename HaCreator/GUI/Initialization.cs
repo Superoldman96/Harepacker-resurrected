@@ -895,6 +895,8 @@ namespace HaCreator.GUI
                 parts.Add("Beta MapleStory (v0.01-v0.30)");
             else if (v.IsPreBB)
                 parts.Add("Pre-Big Bang");
+            else if (v.IsVUpdate)
+                parts.Add("V Update");
             else if (v.IsBigBang2)
                 parts.Add("Big Bang 2 / Chaos");
             else
@@ -1304,6 +1306,7 @@ namespace HaCreator.GUI
             {
                 if (v.IsBetaMs) return "Beta";
                 if (v.IsPreBB) return "Pre-BB";
+                if (v.IsVUpdate) return "V Update";
                 if (v.IsBigBang2) return "BB2/Chaos";
                 if (v.Is64Bit) return "64-bit";
                 return "";

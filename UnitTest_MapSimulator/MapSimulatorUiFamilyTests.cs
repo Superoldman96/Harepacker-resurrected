@@ -27,12 +27,12 @@ public sealed class MapSimulatorUiFamilyTests
     }
 
     [Fact]
-    public void SixtyFourBitVersionAlwaysUsesModernFamily()
+    public void VUpdateVersionAlwaysUsesModernFamily()
     {
         Assert.Equal(
             MapSimulatorUiFamily.VUpdate,
             MapSimulatorUiFamilyResolver.Resolve(
-                is64Bit: true,
+                isVUpdate: true,
                 isPreBigBang: true,
                 hasBigBangMarker: false));
     }
@@ -43,7 +43,7 @@ public sealed class MapSimulatorUiFamilyTests
         Assert.Equal(
             MapSimulatorUiFamily.LegacyPreBigBang,
             MapSimulatorUiFamilyResolver.Resolve(
-                is64Bit: false,
+                isVUpdate: false,
                 isPreBigBang: true,
                 hasBigBangMarker: true));
     }
@@ -54,7 +54,7 @@ public sealed class MapSimulatorUiFamilyTests
         Assert.Equal(
             MapSimulatorUiFamily.LegacyPreBigBang,
             MapSimulatorUiFamilyResolver.Resolve(
-                is64Bit: false,
+                isVUpdate: false,
                 isPreBigBang: false,
                 hasBigBangMarker: false));
     }
@@ -65,7 +65,7 @@ public sealed class MapSimulatorUiFamilyTests
         Assert.Equal(
             MapSimulatorUiFamily.BigBang,
             MapSimulatorUiFamilyResolver.Resolve(
-                is64Bit: false,
+                isVUpdate: false,
                 isPreBigBang: false,
                 hasBigBangMarker: true));
     }
@@ -75,7 +75,7 @@ public sealed class MapSimulatorUiFamilyTests
     {
         var versionInfo = new VersionInfo
         {
-            Is64Bit = false,
+            IsVUpdate = false,
             IsPreBB = false
         };
 
@@ -87,6 +87,11 @@ public sealed class MapSimulatorUiFamilyTests
         Assert.Equal(
             MapSimulatorUiFamily.LegacyPreBigBang,
             MapSimulatorUiFamilyResolver.Resolve(versionInfo, hasBigBangMarker: true));
+
+        versionInfo.IsVUpdate = true;
+        Assert.Equal(
+            MapSimulatorUiFamily.VUpdate,
+            MapSimulatorUiFamilyResolver.Resolve(versionInfo, hasBigBangMarker: false));
     }
 
     [Fact]

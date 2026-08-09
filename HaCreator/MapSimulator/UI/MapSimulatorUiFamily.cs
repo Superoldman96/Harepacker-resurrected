@@ -46,7 +46,7 @@ internal static class MapSimulatorUiFamilyResolver
     internal static MapSimulatorUiFamily Resolve(VersionInfo versionInfo, bool hasBigBangMarker)
     {
         return Resolve(
-            is64Bit: versionInfo?.Is64Bit ?? false,
+            isVUpdate: versionInfo?.IsVUpdate ?? false,
             isPreBigBang: versionInfo?.IsPreBB ?? false,
             hasBigBangMarker);
     }
@@ -57,13 +57,13 @@ internal static class MapSimulatorUiFamilyResolver
     /// straightforward to exercise without loading WZ assets.
     /// </summary>
     internal static MapSimulatorUiFamily Resolve(
-        bool is64Bit,
+        bool isVUpdate,
         bool isPreBigBang,
         bool hasBigBangMarker)
     {
         // A V update client uses the modern UI family regardless of legacy metadata
         // or marker state.
-        if (is64Bit)
+        if (isVUpdate)
         {
             return MapSimulatorUiFamily.VUpdate;
         }

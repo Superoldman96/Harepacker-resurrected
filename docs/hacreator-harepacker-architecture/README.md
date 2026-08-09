@@ -193,6 +193,7 @@ Each extracted version has a `manifest.json`:
   "encryption": "GMS",
   "is64Bit": false,
   "isPreBBDataWzFormat": true,
+  "isVUpdate": false,
   "categories": {
     "String": { "fileCount": 8 },
     "Map": { "fileCount": 1250 },
@@ -205,6 +206,30 @@ Each extracted version has a `manifest.json`:
   }
 }
 ```
+
+`isVUpdate` is detected from the presence of `UI.wz/StatusBar3.img` during
+WZ extraction. It is independent of the client architecture and lets IMG
+versions retain the same UI-family selection as their source WZ files.
+
+### MapleStory V Update
+
+MapleStory's V Update introduced the fifth-job system and its accompanying
+modern status-bar assets. The client-owned UI images distinguish the simulator
+families by newest owner: `StatusBar.img` identifies the legacy/pre-Big-Bang
+family, `StatusBar2.img` identifies the post-Big-Bang family, and
+`StatusBar3.img` identifies the V Update family. Because later clients can keep
+older assets for compatibility, `StatusBar3.img` takes precedence when more
+than one is present. The extraction service records this result as
+`isVUpdate`; when an IMG version is opened, `VersionManager` and
+`ImgFileSystemManager` deserialize that flag from `manifest.json`. For exports
+created before the flag existed, both readers fall back to the presence of
+`UI/StatusBar3.img` and write the inferred `isVUpdate: true` value back to the
+manifest. If the manifest is read-only, the in-memory version still uses the
+inferred value.
+
+For background on the fifth-job release, see the [official V-179 patch
+notes](https://www.nexon.com/maplestory/news/update/4250/v-179-v-5th-job-patch-notes)
+and the [MapleStory V overview](https://maplestory.fandom.com/wiki/MapleStory:_V).
 
 ---
 
