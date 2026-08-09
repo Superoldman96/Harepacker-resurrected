@@ -22,6 +22,12 @@
   <data name="PlaceMarkerHint"><value>Add marker: click the desired position on the canvas. Press Escape or right-click to cancel.</value></data>
   <data name="MarkerPlacementCancelled"><value>Marker placement cancelled.</value></data>
   <data name="MarkerPlaced"><value>Marker added at X {0}, Y {1}.</value></data>
+  <data name="CanvasInteractionHint"><value>Select a marker, drag to move it, use the arrow keys to nudge it, or press Delete to remove it.</value></data>
+  <data name="DeleteMarkerHint"><value>Delete the selected marker (Delete).</value></data>
+  <data name="MarkerMoving"><value>Moving marker: X {0}, Y {1}.</value></data>
+  <data name="MarkerMoved"><value>Marker moved to X {0}, Y {1}.</value></data>
+  <data name="MarkerMoveCancelled"><value>Marker move cancelled.</value></data>
+  <data name="MarkerDeleted"><value>Marker {0} deleted. Use Undo to restore it.</value></data>
   <data name="AddLink"><value>Add child / link</value></data>
   <data name="ReplaceBackground"><value>Replace background</value></data>
   <data name="ReviewChanges"><value>Review changes</value></data>
@@ -62,9 +68,11 @@
   <data name="SpotX"><value>Spot X</value></data>
   <data name="SpotY"><value>Spot Y</value></data>
   <data name="MapIds"><value>Referenced maps</value></data>
+  <data name="MapIdsCompact"><value>Referenced&#x0A;maps</value></data>
   <data name="TitleField"><value>Title</value></data>
   <data name="Description"><value>Description</value></data>
   <data name="TownDescription"><value>Town description</value></data>
+  <data name="TownDescriptionCompact"><value>Town&#x0A;description</value></data>
   <data name="MapLife"><value>Map life</value></data>
   <data name="NpcMobHint"><value>NPC and mob availability is derived from each map's life entries.</value></data>
   <data name="Diagnostics"><value>Diagnostics</value></data>

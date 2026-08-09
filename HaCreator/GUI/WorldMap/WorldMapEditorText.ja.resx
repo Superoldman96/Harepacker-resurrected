@@ -8,9 +8,17 @@
   <data name="BackgroundReplaced"><value>BaseImg 背景を置き換え、元に戻せる編集として保留しました。</value></data><data name="RuntimePreviewStarted"><value>実行時マッププレビューを開始しました。</value></data><data name="RuntimePreviewUnavailable"><value>HaCreator マップシミュレーターが有効でないため、実行時プレビューを利用できません。</value></data>
   <data name="AddFog"><value>フォグを追加</value></data><data name="RemoveMarker"><value>マーカーを削除</value></data><data name="RemoveLink"><value>リンクを削除</value></data><data name="RemoveFog"><value>フォグを削除</value></data><data name="AddMap"><value>マップを追加</value></data><data name="MapSearch"><value>マップ ID/名前ピッカー</value></data><data name="MapSearchHint"><value>ID、街、マップ名で InfoManager のマップ名を検索します。</value></data><data name="Derived"><value>派生可用性</value></data>
   <data name="UnknownMap"><value>&#x4E0D;&#x660E;&#x306A;&#x30DE;&#x30C3;&#x30D7;</value></data>
+  <data name="MapIdsCompact"><value>参照&#x0A;マップ</value></data>
+  <data name="TownDescriptionCompact"><value>町の&#x0A;説明</value></data>
   <data name="AISettings"><value>AI 設定</value></data>
   <data name="AISettingsHint"><value>AI エンドポイント、モデル、API キーを設定します。</value></data>
   <data name="PlaceMarkerHint"><value>マーカーを追加: キャンバス上の目的の位置をクリックします。Escape キーまたは右クリックでキャンセルします。</value></data>
   <data name="MarkerPlacementCancelled"><value>マーカーの配置をキャンセルしました。</value></data>
   <data name="MarkerPlaced"><value>X {0}、Y {1} にマーカーを追加しました。</value></data>
+  <data name="CanvasInteractionHint"><value>マーカーを選択し、ドラッグで移動、矢印キーで微調整、Delete キーで削除できます。</value></data>
+  <data name="DeleteMarkerHint"><value>選択したマーカーを削除します (Delete)。</value></data>
+  <data name="MarkerMoving"><value>マーカーを移動中: X {0}、Y {1}。</value></data>
+  <data name="MarkerMoved"><value>マーカーを X {0}、Y {1} に移動しました。</value></data>
+  <data name="MarkerMoveCancelled"><value>マーカーの移動をキャンセルしました。</value></data>
+  <data name="MarkerDeleted"><value>マーカー {0} を削除しました。元に戻すには「元に戻す」を使用してください。</value></data>
 </root>

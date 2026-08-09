@@ -29,6 +29,14 @@ modern clients can round-trip without schema cleanup.
   logical canvas position, accounting for the base-image origin. It remains
   coordinate-accurate while zoomed and can be cancelled with Escape or a
   right-click.
+- Markers support direct canvas editing: click to select, drag to move, use the
+  arrow keys for one-pixel nudges (Shift for ten pixels), and press Delete or
+  use the canvas trash tool to remove the selection. Dragging records one undo
+  operation when released; Escape restores the pre-drag position.
+- Canvas zoom uses layout-aware scaling so scroll extents and Fit Canvas track
+  the viewport. Ctrl+mouse-wheel switches from automatic fitting to manual zoom.
+  The canvas footer only exposes implemented display options: grid, labels, and
+  raw bounds.
 - `WorldMapPreviewCache` converts selected canvas assets to frozen WPF bitmaps
   with bounded source/fingerprint keyed caching.
 - `HotSwapRefreshService.WorldMapDataChanged` lets a workspace reload clean
@@ -51,9 +59,12 @@ the workspace status row.
    Lacheln marker, base origin, links, and marker type 29.
 3. Activate the marker placement tool, click an empty canvas position at several
    zoom levels, and confirm the marker inspector reports that position. Cancel
-   once with Escape and once with right-click. Then add and remove referenced
-   maps with **Select a map**, choose a labelled marker type, use undo/redo,
-   validate, save, and reopen.
+   once with Escape and once with right-click. Select and drag a marker, cancel
+   one drag with Escape, nudge with the arrow keys and Shift+arrow, then delete
+   it with both the Delete key and canvas trash tool. Confirm undo restores each
+   move or deletion. Then add and remove referenced maps with **Select a map**,
+   including double-click/Enter from search results, choose a labelled marker
+   type, validate, save, and reopen.
 4. Select a grouped marker and confirm progressive NPC/mob availability from map
    `life` entries, including missing-asset and categorised-life diagnostics.
 5. Toggle grid, labels, links, fog, derived overlays, and raw bounds; verify menu

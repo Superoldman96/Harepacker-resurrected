@@ -35,4 +35,18 @@ public sealed class WorldMapWorkspacePresentationTests
                 Assert.Contains("Source-defined", option.DisplayText);
             });
     }
+
+    [Fact]
+    public void MarkerTitleChange_NotifiesDisplayName()
+    {
+        var marker = new WorldMapMarkerItem { NativeKey = "7" };
+        var notifications = new List<string?>();
+        marker.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
+
+        marker.Title = "New destination";
+
+        Assert.Equal("New destination", marker.DisplayName);
+        Assert.Contains(nameof(WorldMapMarkerItem.Title), notifications);
+        Assert.Contains(nameof(WorldMapMarkerItem.DisplayName), notifications);
+    }
 }

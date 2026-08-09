@@ -75,7 +75,7 @@ public sealed class WorldMapMarkerItem : NotifyPropertyChangedBase
     public int MarkerType { get => _markerType; set => Set(ref _markerType, value); }
     public int X { get => _x; set { if (Set(ref _x, value)) Raise(nameof(CanvasX)); } }
     public int Y { get => _y; set { if (Set(ref _y, value)) Raise(nameof(CanvasY)); } }
-    public string Title { get => _title; set => Set(ref _title, value); }
+    public string Title { get => _title; set { if (Set(ref _title, value)) Raise(nameof(DisplayName)); } }
     public string Description { get => _description; set => Set(ref _description, value); }
     public string TownDescription { get => _townDescription; set => Set(ref _townDescription, value); }
     public ImageSource? MarkerImage { get => _markerImage; set => Set(ref _markerImage, value); }

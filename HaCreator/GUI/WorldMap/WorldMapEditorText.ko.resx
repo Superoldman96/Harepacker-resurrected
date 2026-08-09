@@ -8,9 +8,17 @@
   <data name="BackgroundReplaced"><value>BaseImg 배경을 교체하고 실행 취소 가능한 편집으로 준비했습니다.</value></data><data name="RuntimePreviewStarted"><value>실행 중인 맵 미리보기를 시작했습니다.</value></data><data name="RuntimePreviewUnavailable"><value>HaCreator 맵 시뮬레이터가 활성화되지 않아 실행 미리보기를 사용할 수 없습니다.</value></data>
   <data name="AddFog"><value>안개 추가</value></data><data name="RemoveMarker"><value>마커 제거</value></data><data name="RemoveLink"><value>링크 제거</value></data><data name="RemoveFog"><value>안개 제거</value></data><data name="AddMap"><value>맵 추가</value></data><data name="MapSearch"><value>맵 ID/이름 선택기</value></data><data name="MapSearchHint"><value>ID, 거리 또는 맵 이름으로 InfoManager 맵 이름을 검색합니다.</value></data><data name="Derived"><value>파생 가용성</value></data>
   <data name="UnknownMap"><value>&#xC54C; &#xC218; &#xC5C6;&#xB294; &#xB9F5;</value></data>
+  <data name="MapIdsCompact"><value>참조&#x0A;맵</value></data>
+  <data name="TownDescriptionCompact"><value>마을&#x0A;설명</value></data>
   <data name="AISettings"><value>AI 설정</value></data>
   <data name="AISettingsHint"><value>AI 엔드포인트, 모델 및 API 키를 구성합니다.</value></data>
   <data name="PlaceMarkerHint"><value>마커 추가: 캔버스에서 원하는 위치를 클릭하세요. Escape 키 또는 마우스 오른쪽 버튼을 클릭하면 취소됩니다.</value></data>
   <data name="MarkerPlacementCancelled"><value>마커 배치를 취소했습니다.</value></data>
   <data name="MarkerPlaced"><value>X {0}, Y {1}에 마커를 추가했습니다.</value></data>
+  <data name="CanvasInteractionHint"><value>마커를 선택하고 드래그하여 이동하거나, 화살표 키로 미세 조정하거나, Delete 키로 삭제하세요.</value></data>
+  <data name="DeleteMarkerHint"><value>선택한 마커를 삭제합니다(Delete).</value></data>
+  <data name="MarkerMoving"><value>마커 이동 중: X {0}, Y {1}.</value></data>
+  <data name="MarkerMoved"><value>마커를 X {0}, Y {1}(으)로 이동했습니다.</value></data>
+  <data name="MarkerMoveCancelled"><value>마커 이동을 취소했습니다.</value></data>
+  <data name="MarkerDeleted"><value>마커 {0}을(를) 삭제했습니다. 실행 취소로 복원할 수 있습니다.</value></data>
 </root>

@@ -55,6 +55,11 @@
                 <Setter Property="VerticalAlignment" Value="Center"/>
                 <Setter Property="Margin" Value="0,2,8,4"/>
             </Style>
+            <Style x:Key="CompactInspectorLabel" TargetType="TextBlock" BasedOn="{StaticResource InspectorLabel}">
+                <Setter Property="Width" Value="58"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+            </Style>
             <Style x:Key="InspectorTextBox" TargetType="TextBox">
                 <Setter Property="Margin" Value="0,2,0,4"/>
                 <Setter Property="MinWidth" Value="90"/>
@@ -77,6 +82,11 @@
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{StaticResource HareAccentSoftBrush}"/></Trigger>
                                 <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{StaticResource HareAccentSoftBrush}"/></Trigger>
+                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="{StaticResource HareAccentSoftBrush}"/>
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource HareAccentBrush}"/>
+                                    <Setter TargetName="Chrome" Property="BorderThickness" Value="2"/>
+                                </DataTrigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
@@ -110,17 +120,28 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+            <Style x:Key="CanvasDeleteToolStyle" TargetType="Button" BasedOn="{StaticResource HareIconButtonStyle}">
+                <Setter Property="Width" Value="38"/>
+                <Setter Property="Height" Value="38"/>
+                <Setter Property="Margin" Value="0,4,0,0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding SelectedMarker}" Value="{x:Null}"><Setter Property="IsEnabled" Value="False"/></DataTrigger>
+                </Style.Triggers>
+            </Style>
             <Style x:Key="CanvasItemContainerStyle" TargetType="ContentPresenter">
                 <Setter Property="Canvas.Left" Value="{Binding CanvasX}"/>
                 <Setter Property="Canvas.Top" Value="{Binding CanvasY}"/>
             </Style>
             <ItemsPanelTemplate x:Key="CanvasItemsPanelTemplate"><Canvas/></ItemsPanelTemplate>
             <DataTemplate x:Key="CanvasMarkerTemplate">
-                <StackPanel Orientation="Vertical">
-                    <Image Source="{Binding MarkerImage}" Width="28" Height="28" Stretch="Uniform" HorizontalAlignment="Center"/>
-                    <Button Style="{StaticResource MarkerButton}" Content="{Binding MarkerType}" Click="Marker_Click"/>
-                    <TextBlock Text="{Binding DisplayName}" FontSize="10" HorizontalAlignment="Center" MaxWidth="120" TextTrimming="CharacterEllipsis" Visibility="{Binding DataContext.ShowLabels, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}"/>
-                </StackPanel>
+                <Border Background="Transparent" Cursor="SizeAll" Focusable="True" ToolTip="{world:WorldMapEditorText CanvasInteractionHint}" PreviewMouseLeftButtonDown="Marker_PreviewMouseLeftButtonDown" MouseMove="Marker_MouseMove" PreviewMouseLeftButtonUp="Marker_PreviewMouseLeftButtonUp">
+                    <StackPanel Orientation="Vertical">
+                        <Image Source="{Binding MarkerImage}" Width="28" Height="28" Stretch="Uniform" HorizontalAlignment="Center" IsHitTestVisible="False"/>
+                        <Button Style="{StaticResource MarkerButton}" Content="{Binding MarkerType}" Click="Marker_Click" Focusable="False"/>
+                        <TextBlock Text="{Binding DisplayName}" FontSize="10" HorizontalAlignment="Center" MaxWidth="120" TextTrimming="CharacterEllipsis" IsHitTestVisible="False" Visibility="{Binding DataContext.ShowLabels, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}"/>
+                    </StackPanel>
+                </Border>
             </DataTemplate>
             <DrawingBrush x:Key="CanvasGridBrush" TileMode="Tile" Viewport="0,0,16,16" ViewportUnits="Absolute" Stretch="None">
                 <DrawingBrush.Drawing>
@@ -233,16 +254,23 @@
                         <TextBlock Text="{world:WorldMapEditorText Canvas}" Style="{StaticResource HareSectionTitleStyle}" VerticalAlignment="Center"/>
                     </DockPanel>
                     <Border Grid.Row="1" Background="{StaticResource HareSurfaceAltBrush}" BorderBrush="{StaticResource HareBorderBrush}" BorderThickness="1" CornerRadius="7" ClipToBounds="True">
-                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Focusable="False">
+                        <ScrollViewer x:Name="canvasScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Focusable="False">
                             <Grid>
-                                <Canvas x:Name="worldCanvas" Width="{Binding SelectedSurface.BaseWidth, TargetNullValue=640}" Height="{Binding SelectedSurface.BaseHeight, TargetNullValue=470}" Background="{StaticResource CanvasGridBrush}" Focusable="True" MouseLeftButtonDown="Canvas_MouseLeftButtonDown" MouseRightButtonDown="Canvas_MouseRightButtonDown" RenderTransformOrigin="0.5,0.5">
-                                    <Canvas.RenderTransform><ScaleTransform ScaleX="{Binding Zoom}" ScaleY="{Binding Zoom}"/></Canvas.RenderTransform>
+                                <Canvas x:Name="worldCanvas" Width="{Binding SelectedSurface.BaseWidth, TargetNullValue=640}" Height="{Binding SelectedSurface.BaseHeight, TargetNullValue=470}" Focusable="True" MouseLeftButtonDown="Canvas_MouseLeftButtonDown" MouseRightButtonDown="Canvas_MouseRightButtonDown" PreviewMouseWheel="Canvas_PreviewMouseWheel">
+                                    <Canvas.Style>
+                                        <Style TargetType="Canvas">
+                                            <Setter Property="Background" Value="{StaticResource CanvasGridBrush}"/>
+                                            <Style.Triggers><DataTrigger Binding="{Binding ShowGrid}" Value="False"><Setter Property="Background" Value="{StaticResource HareSurfaceBrush}"/></DataTrigger></Style.Triggers>
+                                        </Style>
+                                    </Canvas.Style>
+                                    <Canvas.LayoutTransform><ScaleTransform ScaleX="{Binding Zoom}" ScaleY="{Binding Zoom}"/></Canvas.LayoutTransform>
                                     <Image x:Name="baseImage" Width="{Binding SelectedSurface.BaseWidth, TargetNullValue=640}" Height="{Binding SelectedSurface.BaseHeight, TargetNullValue=470}" Stretch="Fill" IsHitTestVisible="False"/>
                                     <Rectangle Width="{Binding SelectedSurface.BaseWidth, TargetNullValue=640}" Height="{Binding SelectedSurface.BaseHeight, TargetNullValue=470}" Stroke="{StaticResource HareBorderBrush}" StrokeThickness="1" Fill="Transparent" IsHitTestVisible="False" Visibility="{Binding ShowRawBounds, Converter={StaticResource BoolToVisibility}}"/>
                                     <ItemsControl x:Name="canvasItemsControl" ItemsSource="{Binding SelectedSurface.Markers}" ItemContainerStyle="{StaticResource CanvasItemContainerStyle}" ItemsPanel="{StaticResource CanvasItemsPanelTemplate}" ItemTemplate="{StaticResource CanvasMarkerTemplate}"/>
                                 </Canvas>
                                 <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10" Padding="4" Panel.ZIndex="10" Background="{StaticResource HareSurfaceBrush}" BorderBrush="{StaticResource HareBorderBrush}" BorderThickness="1" CornerRadius="7">
-                                    <ToggleButton x:Name="addMarkerToolButton" Style="{StaticResource CanvasToolToggleStyle}" Click="AddMarkerTool_Click" AutomationProperties.Name="{world:WorldMapEditorText AddMarker}">
+                                    <StackPanel>
+                                      <ToggleButton x:Name="addMarkerToolButton" Style="{StaticResource CanvasToolToggleStyle}" Click="AddMarkerTool_Click" AutomationProperties.Name="{world:WorldMapEditorText AddMarker}">
                                         <ToggleButton.ToolTip>
                                             <ToolTip Content="{world:WorldMapEditorText PlaceMarkerHint}"/>
                                         </ToggleButton.ToolTip>
@@ -250,19 +278,23 @@
                                             <Ellipse Width="16" Height="16" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" StrokeThickness="2"/>
                                             <Path Data="M11,6 L11,16 M6,11 L16,11" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                                         </Grid>
-                                    </ToggleButton>
+                                      </ToggleButton>
+                                      <Button Style="{StaticResource CanvasDeleteToolStyle}" Click="DeleteMarkerTool_Click" ToolTip="{world:WorldMapEditorText DeleteMarkerHint}" AutomationProperties.Name="{world:WorldMapEditorText RemoveMarker}">
+                                          <Viewbox Width="18" Height="18"><Path Data="M5,6 L19,6 M8,6 L9,20 L15,20 L16,6 M9,3 L15,3 L16,6 L8,6" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.8" StrokeLineJoin="Round"/></Viewbox>
+                                      </Button>
+                                    </StackPanel>
                                 </Border>
                             </Grid>
                         </ScrollViewer>
                     </Border>
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
-                        <CheckBox Content="{world:WorldMapEditorText Grid}" IsChecked="{Binding ShowGrid, Mode=TwoWay}" AutomationProperties.Name="{world:WorldMapEditorText Grid}"/>
-                        <CheckBox Margin="12,0,0,0" Content="{world:WorldMapEditorText Rulers}" IsChecked="{Binding ShowRulers, Mode=TwoWay}" AutomationProperties.Name="{world:WorldMapEditorText Rulers}"/>
-                        <CheckBox Margin="12,0,0,0" Content="{world:WorldMapEditorText Labels}" IsChecked="{Binding ShowLabels, Mode=TwoWay}" AutomationProperties.Name="{world:WorldMapEditorText Labels}"/>
-                        <CheckBox Margin="12,0,0,0" Content="{world:WorldMapEditorText ShowLinks}" IsChecked="{Binding ShowLinks, Mode=TwoWay}" AutomationProperties.Name="{world:WorldMapEditorText ShowLinks}"/>
-                        <CheckBox Margin="12,0,0,0" Content="{world:WorldMapEditorText ShowFog}" IsChecked="{Binding ShowFog, Mode=TwoWay}" AutomationProperties.Name="{world:WorldMapEditorText ShowFog}"/>
-                        <CheckBox Margin="12,0,0,0" Content="{world:WorldMapEditorText DerivedOverlays}" IsChecked="{Binding ShowDerivedOverlays, Mode=TwoWay}" AutomationProperties.Name="{world:WorldMapEditorText DerivedOverlays}"/>
-                    </StackPanel>
+                    <DockPanel Grid.Row="2" Margin="0,8,0,0">
+                        <TextBlock DockPanel.Dock="Right" Text="{world:WorldMapEditorText CanvasInteractionHint}" Style="{StaticResource HareMutedTextStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox Content="{world:WorldMapEditorText Grid}" IsChecked="{Binding ShowGrid, Mode=TwoWay}" AutomationProperties.Name="{world:WorldMapEditorText Grid}"/>
+                            <CheckBox Margin="12,0,0,0" Content="{world:WorldMapEditorText Labels}" IsChecked="{Binding ShowLabels, Mode=TwoWay}" AutomationProperties.Name="{world:WorldMapEditorText Labels}"/>
+                            <CheckBox Margin="12,0,0,0" Content="{world:WorldMapEditorText RawBounds}" IsChecked="{Binding ShowRawBounds, Mode=TwoWay}" AutomationProperties.Name="{world:WorldMapEditorText RawBounds}"/>
+                        </StackPanel>
+                    </DockPanel>
                 </Grid>
             </Border>
 
@@ -294,15 +326,15 @@
                         <Separator Margin="0,0,0,12"/>
                         <TextBlock Text="{world:WorldMapEditorText MarkerInspector}" Style="{StaticResource HareSectionTitleStyle}"/>
                         <Grid Margin="0,8,0,12">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="64"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                            <TextBlock Style="{StaticResource InspectorLabel}" Text="{world:WorldMapEditorText Type}"/>
+                            <TextBlock Style="{StaticResource CompactInspectorLabel}" Text="{world:WorldMapEditorText Type}"/>
                             <ComboBox Grid.Column="1" Style="{StaticResource InspectorComboBox}" ItemsSource="{Binding MarkerTypes}" DisplayMemberPath="DisplayText" SelectedValuePath="Value" SelectedValue="{Binding SelectedMarker.MarkerType, Mode=TwoWay}" ToolTip="{world:WorldMapEditorText MarkerTypeHint}"/>
-                            <TextBlock Grid.Row="1" Style="{StaticResource InspectorLabel}" Text="{world:WorldMapEditorText SpotX}"/>
+                            <TextBlock Grid.Row="1" Style="{StaticResource CompactInspectorLabel}" Text="{world:WorldMapEditorText SpotX}"/>
                             <TextBox Grid.Row="1" Grid.Column="1" Style="{StaticResource InspectorTextBox}" InputScope="Number" Text="{Binding SelectedMarker.X, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
-                            <TextBlock Grid.Row="2" Style="{StaticResource InspectorLabel}" Text="{world:WorldMapEditorText SpotY}"/>
+                            <TextBlock Grid.Row="2" Style="{StaticResource CompactInspectorLabel}" Text="{world:WorldMapEditorText SpotY}"/>
                             <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource InspectorTextBox}" InputScope="Number" Text="{Binding SelectedMarker.Y, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
-                            <TextBlock Grid.Row="3" Style="{StaticResource InspectorLabel}" Text="{world:WorldMapEditorText MapIds}"/>
+                            <TextBlock Grid.Row="3" Style="{StaticResource CompactInspectorLabel}" VerticalAlignment="Top" Margin="0,5,4,0" Text="{world:WorldMapEditorText MapIdsCompact}"/>
                             <Border Grid.Row="3" Grid.Column="1" Margin="0,2,0,6" Padding="6" Background="{StaticResource HareSurfaceAltBrush}" BorderBrush="{StaticResource HareBorderBrush}" BorderThickness="1" CornerRadius="4" ToolTip="{world:WorldMapEditorText MapIdInputHint}">
                                 <Grid>
                                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -326,11 +358,11 @@
                                     </StackPanel>
                                 </Grid>
                             </Border>
-                            <TextBlock Grid.Row="4" Style="{StaticResource InspectorLabel}" Text="{world:WorldMapEditorText TitleField}"/>
+                            <TextBlock Grid.Row="4" Style="{StaticResource CompactInspectorLabel}" Text="{world:WorldMapEditorText TitleField}"/>
                             <TextBox Grid.Row="4" Grid.Column="1" Style="{StaticResource InspectorTextBox}" Text="{Binding SelectedMarker.Title, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
-                            <TextBlock Grid.Row="5" Style="{StaticResource InspectorLabel}" Text="{world:WorldMapEditorText Description}"/>
+                            <TextBlock Grid.Row="5" Style="{StaticResource CompactInspectorLabel}" Text="{world:WorldMapEditorText Description}"/>
                             <TextBox Grid.Row="5" Grid.Column="1" Style="{StaticResource InspectorTextBox}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="42" Text="{Binding SelectedMarker.Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
-                            <TextBlock Grid.Row="6" Style="{StaticResource InspectorLabel}" Text="{world:WorldMapEditorText TownDescription}"/>
+                            <TextBlock Grid.Row="6" Style="{StaticResource CompactInspectorLabel}" VerticalAlignment="Top" Margin="0,5,8,4" Text="{world:WorldMapEditorText TownDescriptionCompact}"/>
                             <TextBox Grid.Row="6" Grid.Column="1" Style="{StaticResource InspectorTextBox}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="42" Text="{Binding SelectedMarker.TownDescription, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
                         </Grid>
                         <WrapPanel Margin="0,0,0,8">
@@ -339,13 +371,13 @@
                         </WrapPanel>
                         <TextBlock Text="{world:WorldMapEditorText MapSearch}" Style="{StaticResource HareMutedTextStyle}" Margin="0,0,0,3"/>
                         <TextBox Style="{StaticResource InspectorTextBox}" Text="{Binding MapSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="{world:WorldMapEditorText MapSearchHint}"/>
-                        <ListBox ItemsSource="{Binding MapSearchResults}" SelectedItem="{Binding SelectedMapSearchItem, Mode=TwoWay}" Height="82" Margin="0,0,0,5" BorderThickness="0" DisplayMemberPath="DisplayText"/>
+                        <ListBox x:Name="mapSearchResultsListBox" ItemsSource="{Binding MapSearchResults}" SelectedItem="{Binding SelectedMapSearchItem, Mode=TwoWay}" Height="82" Margin="0,0,0,5" BorderThickness="0" DisplayMemberPath="DisplayText" MouseDoubleClick="MapSearchResults_MouseDoubleClick" KeyDown="MapSearchResults_KeyDown"/>
                         <Button Content="{world:WorldMapEditorText AddMap}" Command="{x:Static world:WorldMapWorkspace.AddMapToMarkerCommand}" Margin="0,0,0,8"/>
                         <TabControl Margin="0,0,0,10">
                             <TabItem Header="{world:WorldMapEditorText Links}">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Bottom" Content="{world:WorldMapEditorText RemoveLink}" Command="{x:Static world:WorldMapWorkspace.RemoveLinkCommand}" Margin="0,6,0,0"/>
-                                    <ListBox ItemsSource="{Binding SelectedSurface.Links}" SelectedItem="{Binding SelectedLink, Mode=TwoWay}" BorderThickness="0" MinHeight="70">
+                                    <ListBox x:Name="linksListBox" ItemsSource="{Binding SelectedSurface.Links}" SelectedItem="{Binding SelectedLink, Mode=TwoWay}" BorderThickness="0" MinHeight="70">
                                         <ListBox.ItemTemplate><DataTemplate><Grid Margin="0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBox Text="{Binding TargetName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Margin="0,0,3,0"/><TextBox Grid.Column="1" Text="{Binding Tooltip, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/></Grid></DataTemplate></ListBox.ItemTemplate>
                                     </ListBox>
                                 </DockPanel>
@@ -353,7 +385,7 @@
                             <TabItem Header="{world:WorldMapEditorText Fog}">
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,6,0,0"><Button Content="{world:WorldMapEditorText AddFog}" Command="{x:Static world:WorldMapWorkspace.AddFogCommand}"/><Button Margin="6,0,0,0" Content="{world:WorldMapEditorText RemoveFog}" Command="{x:Static world:WorldMapWorkspace.RemoveFogCommand}"/></StackPanel>
-                                    <ListBox ItemsSource="{Binding SelectedSurface.FogLayers}" SelectedItem="{Binding SelectedFog, Mode=TwoWay}" BorderThickness="0" MinHeight="70">
+                                    <ListBox x:Name="fogListBox" ItemsSource="{Binding SelectedSurface.FogLayers}" SelectedItem="{Binding SelectedFog, Mode=TwoWay}" BorderThickness="0" MinHeight="70">
                                         <ListBox.ItemTemplate><DataTemplate><Grid Margin="0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBox Text="{Binding Quest, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" InputScope="Number" Margin="0,0,3,0"/><TextBox Grid.Column="1" Text="{Binding QState, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" InputScope="Number"/></Grid></DataTemplate></ListBox.ItemTemplate>
                                     </ListBox>
                                 </DockPanel>

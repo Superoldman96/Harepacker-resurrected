@@ -8,9 +8,17 @@
   <data name="BackgroundReplaced"><value>已替换 BaseImg 背景，并作为可撤销编辑暂存。</value></data><data name="RuntimePreviewStarted"><value>已启动运行时地图预览。</value></data><data name="RuntimePreviewUnavailable"><value>HaCreator 地图模拟器未活动，无法使用运行时预览。</value></data>
   <data name="AddFog"><value>添加雾层</value></data><data name="RemoveMarker"><value>移除标记</value></data><data name="RemoveLink"><value>移除链接</value></data><data name="RemoveFog"><value>移除雾层</value></data><data name="AddMap"><value>添加地图</value></data><data name="MapSearch"><value>地图 ID/名称选择器</value></data><data name="MapSearchHint"><value>按 ID、街道或地图名称搜索 InfoManager 地图名称。</value></data><data name="Derived"><value>派生可用性</value></data>
   <data name="UnknownMap"><value>&#x672A;&#x77E5;&#x5730;&#x56FE;</value></data>
+  <data name="MapIdsCompact"><value>引用&#x0A;地图</value></data>
+  <data name="TownDescriptionCompact"><value>城镇&#x0A;说明</value></data>
   <data name="AISettings"><value>AI 设置</value></data>
   <data name="AISettingsHint"><value>配置 AI 端点、模型和 API 密钥。</value></data>
   <data name="PlaceMarkerHint"><value>添加标记：单击画布上的目标位置。按 Escape 键或右键单击可取消。</value></data>
   <data name="MarkerPlacementCancelled"><value>已取消标记放置。</value></data>
   <data name="MarkerPlaced"><value>已在 X {0}、Y {1} 处添加标记。</value></data>
+  <data name="CanvasInteractionHint"><value>选择标记后可拖动、使用方向键微调，或按 Delete 键删除。</value></data>
+  <data name="DeleteMarkerHint"><value>删除所选标记（Delete）。</value></data>
+  <data name="MarkerMoving"><value>正在移动标记：X {0}、Y {1}。</value></data>
+  <data name="MarkerMoved"><value>已将标记移动到 X {0}、Y {1}。</value></data>
+  <data name="MarkerMoveCancelled"><value>已取消移动标记。</value></data>
+  <data name="MarkerDeleted"><value>已删除标记 {0}。可使用撤销恢复。</value></data>
 </root>

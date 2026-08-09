@@ -18,8 +18,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using MapleLib.WzLib.WzProperties;
 
 namespace HaCreator.GUI.WorldMap;
@@ -73,6 +75,13 @@ public partial class WorldMapWorkspace : Window
     private bool catalogLoaded;
     private bool placingMarker;
     private bool suppressDirty;
+    private bool autoFitCanvas = true;
+    private WorldMapMarkerItem? draggedMarker;
+    private FrameworkElement? markerDragElement;
+    private Point markerDragStartPoint;
+    private int markerDragStartX;
+    private int markerDragStartY;
+    private bool markerDragMoved;
 
     public WorldMapWorkspace()
     {
@@ -99,8 +108,8 @@ public partial class WorldMapWorkspace : Window
         CommandBindings.Add(new CommandBinding(ReplaceBackgroundCommand, (_, _) => ReplaceBackground(), (_, e) => e.CanExecute = viewModel.SelectedSurface != null));
         CommandBindings.Add(new CommandBinding(ReviewChangesCommand, (_, _) => ReviewChanges()));
         CommandBindings.Add(new CommandBinding(FitCanvasCommand, (_, _) => FitCanvas()));
-        CommandBindings.Add(new CommandBinding(ZoomOutCommand, (_, _) => viewModel.Zoom -= 0.1));
-        CommandBindings.Add(new CommandBinding(ZoomInCommand, (_, _) => viewModel.Zoom += 0.1));
+        CommandBindings.Add(new CommandBinding(ZoomOutCommand, (_, _) => ZoomBy(-0.1)));
+        CommandBindings.Add(new CommandBinding(ZoomInCommand, (_, _) => ZoomBy(0.1)));
         CommandBindings.Add(new CommandBinding(RuntimePreviewCommand, (_, _) => RuntimePreview()));
 
         viewModel.PropertyChanged += ViewModel_PropertyChanged;
@@ -162,8 +171,8 @@ public partial class WorldMapWorkspace : Window
     private void ReplaceBackground_Executed(object sender, ExecutedRoutedEventArgs e) => ReplaceBackground();
     private void ReviewChanges_Executed(object sender, ExecutedRoutedEventArgs e) => ReviewChanges();
     private void FitCanvas_Executed(object sender, ExecutedRoutedEventArgs e) => FitCanvas();
-    private void ZoomOut_Executed(object sender, ExecutedRoutedEventArgs e) => viewModel.Zoom -= 0.1;
-    private void ZoomIn_Executed(object sender, ExecutedRoutedEventArgs e) => viewModel.Zoom += 0.1;
+    private void ZoomOut_Executed(object sender, ExecutedRoutedEventArgs e) => ZoomBy(-0.1);
+    private void ZoomIn_Executed(object sender, ExecutedRoutedEventArgs e) => ZoomBy(0.1);
     private void RuntimePreview_Executed(object sender, ExecutedRoutedEventArgs e) => RuntimePreview();
     private void Undo_Executed(object sender, ExecutedRoutedEventArgs e) => Undo();
     private void Redo_Executed(object sender, ExecutedRoutedEventArgs e) => Redo();
@@ -295,13 +304,15 @@ public partial class WorldMapWorkspace : Window
         if (e.PropertyName == nameof(WorldMapWorkspaceViewModel.SelectedSurface))
         {
             CancelMarkerPlacement(updateStatus: false);
+            CancelMarkerDrag(revert: true, updateStatus: false);
             AttachMarkerHandlers(viewModel.SelectedSurface);
             RenderCanvas();
+            if (autoFitCanvas)
+                Dispatcher.BeginInvoke(DispatcherPriority.Loaded, ApplyFitCanvasZoom);
         }
         else if (e.PropertyName == nameof(WorldMapWorkspaceViewModel.SelectedMarker))
         {
             AttachMarkerHandlers(viewModel.SelectedMarker);
-            RenderCanvas();
             _ = LoadAvailabilityAsync();
         }
         else if (e.PropertyName == nameof(WorldMapWorkspaceViewModel.MapSearchText))
@@ -402,6 +413,12 @@ public partial class WorldMapWorkspace : Window
     private void Marker_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (suppressDirty || sender is not WorldMapMarkerItem marker || viewModel.SelectedSurface == null)
+            return;
+        if (e.PropertyName is nameof(WorldMapMarkerItem.IsSelected)
+            or nameof(WorldMapMarkerItem.CanvasX)
+            or nameof(WorldMapMarkerItem.CanvasY)
+            or nameof(WorldMapMarkerItem.MarkerImage)
+            or nameof(WorldMapMarkerItem.DisplayName))
             return;
         RecordPresentationChange(viewModel.SelectedSurface, $"Edit marker {marker.NativeKey}");
         viewModel.SelectedSurface.IsDirty = true;
@@ -573,12 +590,114 @@ public partial class WorldMapWorkspace : Window
         }
     }
 
+    private void Marker_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (placingMarker || sender is not FrameworkElement element || element.DataContext is not WorldMapMarkerItem marker)
+            return;
+        viewModel.SelectedMarker = marker;
+        draggedMarker = marker;
+        markerDragElement = element;
+        markerDragStartPoint = e.GetPosition(worldCanvas);
+        markerDragStartX = marker.X;
+        markerDragStartY = marker.Y;
+        markerDragMoved = false;
+        element.Focus();
+        Mouse.Capture(element);
+    }
+
+    private void Marker_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (draggedMarker == null || markerDragElement == null || e.LeftButton != MouseButtonState.Pressed)
+            return;
+        Point point = e.GetPosition(worldCanvas);
+        Vector delta = point - markerDragStartPoint;
+        if (!markerDragMoved && Math.Abs(delta.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(delta.Y) < SystemParameters.MinimumVerticalDragDistance)
+            return;
+        markerDragMoved = true;
+        MoveMarkerTo(draggedMarker, markerDragStartX + (int)Math.Round(delta.X), markerDragStartY + (int)Math.Round(delta.Y));
+        viewModel.StatusText = WorldMapEditorTextExtension.Format("MarkerMoving", draggedMarker.X, draggedMarker.Y);
+        e.Handled = true;
+    }
+
+    private void Marker_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (draggedMarker == null)
+            return;
+        bool moved = markerDragMoved;
+        CompleteMarkerDrag();
+        e.Handled = moved;
+    }
+
+    private void CompleteMarkerDrag()
+    {
+        WorldMapMarkerItem? marker = draggedMarker;
+        bool moved = markerDragMoved && marker != null && (marker.X != markerDragStartX || marker.Y != markerDragStartY);
+        ReleaseMarkerDragCapture();
+        if (!moved || marker == null || viewModel.SelectedSurface == null)
+            return;
+        viewModel.SelectedSurface.IsDirty = true;
+        viewModel.IsDirty = true;
+        RecordPresentationChange(viewModel.SelectedSurface, $"Move marker {marker.NativeKey}");
+        viewModel.StatusText = WorldMapEditorTextExtension.Format("MarkerMoved", marker.X, marker.Y);
+    }
+
+    private void CancelMarkerDrag(bool revert, bool updateStatus = true)
+    {
+        if (draggedMarker == null)
+            return;
+        if (revert)
+            MoveMarkerTo(draggedMarker, markerDragStartX, markerDragStartY);
+        ReleaseMarkerDragCapture();
+        if (updateStatus)
+            viewModel.StatusText = WorldMapEditorTextExtension.Get("MarkerMoveCancelled");
+    }
+
+    private void ReleaseMarkerDragCapture()
+    {
+        if (markerDragElement?.IsMouseCaptured == true)
+            markerDragElement.ReleaseMouseCapture();
+        draggedMarker = null;
+        markerDragElement = null;
+        markerDragMoved = false;
+    }
+
+    private void MoveMarkerTo(WorldMapMarkerItem marker, int x, int y)
+    {
+        WorldMapSurfaceItem? surface = viewModel.SelectedSurface;
+        if (surface == null)
+            return;
+        int minX = -surface.BaseOriginX;
+        int minY = -surface.BaseOriginY;
+        int maxX = surface.BaseWidth - surface.BaseOriginX;
+        int maxY = surface.BaseHeight - surface.BaseOriginY;
+        suppressDirty = true;
+        try
+        {
+            marker.X = Math.Clamp(x, minX, maxX);
+            marker.Y = Math.Clamp(y, minY, maxY);
+        }
+        finally
+        {
+            suppressDirty = false;
+        }
+    }
+
     private void Canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (!placingMarker || viewModel.SelectedSurface == null)
+        bool clickedMarker = e.OriginalSource is DependencyObject source
+            && ItemsControl.ContainerFromElement(canvasItemsControl, source) != null;
+        if (!placingMarker)
+        {
+            if (!clickedMarker)
+            {
+                viewModel.SelectedMarker = null;
+                worldCanvas.Focus();
+            }
             return;
-        if (e.OriginalSource is DependencyObject source &&
-            ItemsControl.ContainerFromElement(canvasItemsControl, source) != null)
+        }
+        if (viewModel.SelectedSurface == null)
+            return;
+        if (clickedMarker)
             return;
         Point point = e.GetPosition(worldCanvas);
         int originX = viewModel.SelectedSurface.BaseOriginX;
@@ -601,9 +720,74 @@ public partial class WorldMapWorkspace : Window
 
     private void Workspace_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Escape || !placingMarker)
+        if (e.Key == Key.Escape && draggedMarker != null)
+        {
+            CancelMarkerDrag(revert: true);
+            e.Handled = true;
             return;
-        CancelMarkerPlacement();
+        }
+        if (e.Key == Key.Escape && placingMarker)
+        {
+            CancelMarkerPlacement();
+            e.Handled = true;
+            return;
+        }
+        if (IsTextEntryFocused())
+            return;
+        if (e.Key == Key.Delete)
+        {
+            if (HasKeyboardFocus(referencedMapsListBox) && referencedMapsListBox.SelectedItem is int mapId)
+                RemoveMapReference(mapId);
+            else if (HasKeyboardFocus(linksListBox))
+                RemoveLink();
+            else if (HasKeyboardFocus(fogListBox))
+                RemoveFog();
+            else if (HasKeyboardFocus(worldCanvas) || HasKeyboardFocus(canvasItemsControl))
+                RemoveMarker();
+            else
+                return;
+            e.Handled = true;
+            return;
+        }
+        if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
+            && viewModel.SelectedMarker != null
+            && (HasKeyboardFocus(worldCanvas) || HasKeyboardFocus(canvasItemsControl)))
+        {
+            int step = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 10 : 1;
+            int dx = e.Key == Key.Left ? -step : e.Key == Key.Right ? step : 0;
+            int dy = e.Key == Key.Up ? -step : e.Key == Key.Down ? step : 0;
+            NudgeSelectedMarker(dx, dy);
+            e.Handled = true;
+        }
+    }
+
+    private static bool IsTextEntryFocused() => Keyboard.FocusedElement is TextBoxBase or PasswordBox
+        || Keyboard.FocusedElement is ComboBox { IsEditable: true };
+
+    private static bool HasKeyboardFocus(UIElement? element) => element?.IsKeyboardFocusWithin == true;
+
+    private void NudgeSelectedMarker(int dx, int dy)
+    {
+        WorldMapMarkerItem? marker = viewModel.SelectedMarker;
+        WorldMapSurfaceItem? surface = viewModel.SelectedSurface;
+        if (marker == null || surface == null)
+            return;
+        int oldX = marker.X;
+        int oldY = marker.Y;
+        MoveMarkerTo(marker, marker.X + dx, marker.Y + dy);
+        if (marker.X == oldX && marker.Y == oldY)
+            return;
+        surface.IsDirty = true;
+        viewModel.IsDirty = true;
+        RecordPresentationChange(surface, $"Nudge marker {marker.NativeKey}");
+        viewModel.StatusText = WorldMapEditorTextExtension.Format("MarkerMoved", marker.X, marker.Y);
+    }
+
+    private void Canvas_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            return;
+        ZoomBy(e.Delta > 0 ? 0.1 : -0.1);
         e.Handled = true;
     }
 
@@ -683,6 +867,8 @@ public partial class WorldMapWorkspace : Window
             CancelMarkerPlacement();
     }
 
+    private void DeleteMarkerTool_Click(object sender, RoutedEventArgs e) => RemoveMarker();
+
     private void CancelMarkerPlacement(bool updateStatus = true)
     {
         if (!placingMarker && addMarkerToolButton?.IsChecked != true)
@@ -752,11 +938,12 @@ public partial class WorldMapWorkspace : Window
         WorldMapMarkerItem? marker = viewModel.SelectedMarker;
         if (surface == null || marker == null || !surface.Markers.Remove(marker))
             return;
+        string markerKey = marker.NativeKey;
         viewModel.SelectedMarker = surface.Markers.FirstOrDefault();
         surface.IsDirty = true;
         viewModel.IsDirty = true;
         RecordPresentationChange(surface, "Remove marker");
-        viewModel.StatusText = WorldMapEditorTextExtension.Get("Ready");
+        viewModel.StatusText = WorldMapEditorTextExtension.Format("MarkerDeleted", markerKey);
         RenderCanvas();
     }
 
@@ -796,6 +983,20 @@ public partial class WorldMapWorkspace : Window
         AddMapReference(marker, surface, map.MapId);
     }
 
+    private void MapSearchResults_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        AddMapToMarker();
+        e.Handled = true;
+    }
+
+    private void MapSearchResults_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+        AddMapToMarker();
+        e.Handled = true;
+    }
+
     private void AddMapReference_Click(object sender, RoutedEventArgs e)
     {
         if (viewModel.SelectedMarker == null || viewModel.SelectedSurface == null)
@@ -809,6 +1010,13 @@ public partial class WorldMapWorkspace : Window
     private void RemoveMapReference_Click(object sender, RoutedEventArgs e)
     {
         if (viewModel.SelectedMarker == null || viewModel.SelectedSurface == null || referencedMapsListBox.SelectedItem is not int mapId)
+            return;
+        RemoveMapReference(mapId);
+    }
+
+    private void RemoveMapReference(int mapId)
+    {
+        if (viewModel.SelectedMarker == null || viewModel.SelectedSurface == null)
             return;
         bool removed;
         suppressDirty = true;
@@ -1215,11 +1423,25 @@ public partial class WorldMapWorkspace : Window
 
     private void FitCanvas()
     {
-        if (worldCanvas.ActualWidth <= 0 || worldCanvas.ActualHeight <= 0 || viewModel.SelectedSurface == null)
+        autoFitCanvas = true;
+        ApplyFitCanvasZoom();
+    }
+
+    private void ApplyFitCanvasZoom()
+    {
+        if (canvasScrollViewer == null || viewModel.SelectedSurface == null)
             return;
-        double horizontal = (worldCanvas.ActualWidth - 32) / Math.Max(1, viewModel.SelectedSurface.BaseWidth);
-        double vertical = (worldCanvas.ActualHeight - 32) / Math.Max(1, viewModel.SelectedSurface.BaseHeight);
+        double viewportWidth = canvasScrollViewer.ViewportWidth > 0 ? canvasScrollViewer.ViewportWidth : canvasScrollViewer.ActualWidth;
+        double viewportHeight = canvasScrollViewer.ViewportHeight > 0 ? canvasScrollViewer.ViewportHeight : canvasScrollViewer.ActualHeight;
+        double horizontal = (viewportWidth - 32) / Math.Max(1, viewModel.SelectedSurface.BaseWidth);
+        double vertical = (viewportHeight - 32) / Math.Max(1, viewModel.SelectedSurface.BaseHeight);
         viewModel.Zoom = Math.Clamp(Math.Min(horizontal, vertical), 0.2, 2.5);
+    }
+
+    private void ZoomBy(double delta)
+    {
+        autoFitCanvas = false;
+        viewModel.Zoom += delta;
     }
 
     private void RuntimePreview()
@@ -1358,8 +1580,8 @@ public partial class WorldMapWorkspace : Window
 
     private void Workspace_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (e.NewSize.Width > 0 && e.NewSize.Height > 0)
-            FitCanvas();
+        if (autoFitCanvas && e.NewSize.Width > 0 && e.NewSize.Height > 0)
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, ApplyFitCanvasZoom);
     }
 }
 
