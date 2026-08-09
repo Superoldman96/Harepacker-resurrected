@@ -222,6 +222,10 @@ namespace HaCreator.GUI
                 };
 
                 extractor.ExtractAll();
+                // Keep the shared BGM compatibility projection available in
+                // IMG/hybrid mode, where the legacy WzManager extraction path
+                // is not used.
+                Program.InfoManager.RefreshAudioCatalogProjection();
 
                 // Set image format detection flag for pre-Big Bang compatibility
                 // DXT formats (Format3, Format1026, Format2050) are not supported by pre-BB clients
@@ -574,16 +578,8 @@ namespace HaCreator.GUI
 
             UpdateImgButtonStates();
 
-            // Keep an explicitly selected legacy mode, but guide new IMG-mode users through
-            // extraction even when they do not have a version yet.
-            if (config.DataSourceMode == DataSourceMode.ImgFileSystem)
-            {
-                tabControl_dataSource.SelectedItem = tabPage_imgVersions;
-            }
-            else
-            {
-                tabControl_dataSource.SelectedItem = tabPage_wzFiles;
-            }
+            // Default to the IMG Versions workflow.
+            tabControl_dataSource.SelectedItem = tabPage_imgVersions;
         }
 
         /// <summary>
@@ -899,6 +895,8 @@ namespace HaCreator.GUI
                 parts.Add("Beta MapleStory (v0.01-v0.30)");
             else if (v.IsPreBB)
                 parts.Add("Pre-Big Bang");
+            else if (v.IsVUpdate)
+                parts.Add("V Update");
             else if (v.IsBigBang2)
                 parts.Add("Big Bang 2 / Chaos");
             else
@@ -1308,6 +1306,7 @@ namespace HaCreator.GUI
             {
                 if (v.IsBetaMs) return "Beta";
                 if (v.IsPreBB) return "Pre-BB";
+                if (v.IsVUpdate) return "V Update";
                 if (v.IsBigBang2) return "BB2/Chaos";
                 if (v.Is64Bit) return "64-bit";
                 return "";
@@ -1612,6 +1611,15 @@ namespace HaCreator.GUI
             if (Program.InfoManager.BGMs.Count != 0)
                 return;
 
+            // IMG/hybrid sources use the shared lazy catalog.  It recursively
+            // discovers nested BGM and BgmMultiTrack properties without
+            // retaining parsed image trees in memory.
+            if (Program.DataSource != null && Program.InfoManager.RefreshAudioCatalogProjection())
+            {
+                LoadCanvasSection("sound");
+                return;
+            }
+
             const string SOUND_WZ_PATH = "sound";
             List<WzDirectory> soundWzDirs = Program.WzManager.GetWzDirectoriesFromBase(SOUND_WZ_PATH);
 
@@ -1628,7 +1636,7 @@ namespace HaCreator.GUI
                         continue;
                     try
                     {
-                        foreach (WzImageProperty bgmImage in soundImage.WzProperties)
+                        foreach ((WzImageProperty bgmImage, string propertyPath) in EnumerateSoundProperties(soundImage))
                         {
                             WzBinaryProperty binProperty = null;
                             if (bgmImage is WzBinaryProperty bgm)
@@ -1648,11 +1656,10 @@ namespace HaCreator.GUI
                             {
                                 //WzImage ownerImage = binProperty.GetTopMostWzImage() as WzImage;
 
-                                string propertyPath = WzInformationManager.GetPropertyPathRelativeToImage(binProperty);
                                 if (binProperty != null && !string.IsNullOrEmpty(propertyPath))
                                 {
-                                    string bgmKey = WzInfoTools.RemoveExtension(soundImage.Name) + @"/" + binProperty.Name;
-                                    Program.InfoManager.BGMs[bgmKey] = new WzInformationManager.BgmEntry(binProperty.Parent.Name, propertyPath);
+                                    string bgmKey = WzInfoTools.RemoveExtension(soundImage.Name) + @"/" + propertyPath;
+                                    Program.InfoManager.BGMs[bgmKey] = new WzInformationManager.BgmEntry(soundImage.Name, propertyPath);
                                 }
                             }
                         }
@@ -1673,6 +1680,38 @@ namespace HaCreator.GUI
                 }
             }
             LoadCanvasSection(SOUND_WZ_PATH);
+        }
+
+        private static IEnumerable<(WzImageProperty Property, string Path)> EnumerateSoundProperties(WzObject node)
+        {
+            return EnumerateSoundProperties(node, new HashSet<WzObject>());
+        }
+
+        private static IEnumerable<(WzImageProperty Property, string Path)> EnumerateSoundProperties(
+            WzObject node,
+            ISet<WzObject> visited)
+        {
+            if (node == null || !visited.Add(node))
+                yield break;
+            IEnumerable<WzImageProperty> properties = node switch
+            {
+                WzImage image => image.WzProperties,
+                WzImageProperty property => SafeSoundProperties(property),
+                _ => Enumerable.Empty<WzImageProperty>()
+            };
+            foreach (WzImageProperty property in properties)
+            {
+                string path = property.Name;
+                foreach ((WzImageProperty child, string childPath) in EnumerateSoundProperties(property, visited))
+                    yield return (child, $"{path}/{childPath}");
+                yield return (property, path);
+            }
+        }
+
+        private static IEnumerable<WzImageProperty> SafeSoundProperties(WzImageProperty property)
+        {
+            try { return property?.WzProperties ?? Enumerable.Empty<WzImageProperty>(); }
+            catch { return Enumerable.Empty<WzImageProperty>(); }
         }
 
         public void ExtractMapMarks()

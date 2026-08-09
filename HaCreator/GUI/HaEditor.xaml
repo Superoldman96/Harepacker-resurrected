@@ -10,6 +10,8 @@
         xmlns:editorItems="clr-namespace:HaCreator.GUI.EditorPanels"
         xmlns:mapEditor="clr-namespace:HaCreator.MapEditor"
         xmlns:cutscene="clr-namespace:HaCreator.GUI.Cutscene"
+        xmlns:audio="clr-namespace:HaCreator.GUI.Audio"
+        xmlns:world="clr-namespace:HaCreator.GUI.WorldMap"
 
         mc:Ignorable="d" 
         d:DesignHeight="721" d:DesignWidth="1111" 
@@ -21,7 +23,6 @@
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:HaEditor.New}" CanExecute="AlwaysExecute" Executed="New_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.Open}" CanExecute="AlwaysExecute" Executed="Open_Executed"/>
-        <CommandBinding Command="{x:Static local:HaEditor.Export}" CanExecute="AlwaysExecute" Executed="Export_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.Save}" CanExecute="AlwaysExecute" Executed="Save_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.Repack}" CanExecute="AlwaysExecute" Executed="Repack_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.About}" CanExecute="AlwaysExecute" Executed="About_Executed"/>
@@ -45,6 +46,7 @@
         <CommandBinding Command="{x:Static local:HaEditor.ShowQuestEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowQuestEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowAnimationEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowCutsceneEditorWindow_Executed"/>
+        <CommandBinding Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowWorldMapEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowMapProperties}" CanExecute="AlwaysExecute" Executed="ShowMapProperties_Executed"/>
     </Window.CommandBindings>
 
@@ -69,6 +71,8 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -77,8 +81,8 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -95,6 +99,14 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="WorkspaceCommandButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource CommandButtonStyle}">
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style x:Key="PrimaryCommandButtonStyle"
@@ -336,9 +348,8 @@
                     <MenuItem Header="{loc:Loc Editor_File_50009C}">
                         <MenuItem Header="{loc:Loc Editor_New_18FDD5}" Command="{x:Static local:HaEditor.New}" InputGestureText="Ctrl+N"/>
                         <MenuItem Header="{loc:Loc Editor_Open_map_03863A}" Command="{x:Static local:HaEditor.Open}" InputGestureText="Ctrl+O"/>
-                        <MenuItem Header="{loc:Loc Editor_Save_map_1EA04E}" Command="{x:Static local:HaEditor.Export}" InputGestureText="Ctrl+S"/>
+                        <MenuItem Header="{loc:Loc Editor_Save_to_WZ_CDEA60}" Command="{x:Static local:HaEditor.Save}" InputGestureText="Ctrl+S"/>
                         <Separator/>
-                        <MenuItem Header="{loc:Loc Editor_Save_to_WZ_CDEA60}" Command="{x:Static local:HaEditor.Save}"/>
                         <MenuItem Header="{loc:Loc Editor_Repack_WZ_files_90BFA4}" Command="{x:Static local:HaEditor.Repack}"/>
                         <MenuItem Header="{loc:Loc Editor_Open_HaRepacker_09E8F1}" Command="{x:Static local:HaEditor.HaRepacker}"/>
                         <Separator/>
@@ -360,6 +371,7 @@
                         <MenuItem Header="{loc:Loc Editor_Preview_324B13}" Command="{x:Static local:HaEditor.MapSim}"/>
                         <MenuItem Header="{loc:Loc Editor_Validate_current_map_3137EC}" Click="ValidateCurrentMap_Click"/>
                         <MenuItem Header="{loc:Loc Editor_Validate_all_maps_7F88A7}" Click="MapExplorerCheckMapButton_Click"/>
+                        <MenuItem Header="{world:WorldMapEditorText EditWorldMapPlacement}" Click="EditActiveWorldMapPlacement_Click"/>
                         <MenuItem Header="{loc:Loc Editor_Finalize_Footholds_68717E}" Command="{x:Static local:HaEditor.Finalize}"/>
                         <MenuItem Header="{loc:Loc Editor_Regenerate_Minimap_CD2C30}" Command="{x:Static local:HaEditor.RegenMinimap}"/>
                         <Separator/>
@@ -368,6 +380,8 @@
                         <MenuItem Header="{loc:Loc Editor_Quest_editor_A8BFA2}" Command="{x:Static local:HaEditor.ShowQuestEditorWindow}"/>
                         <MenuItem Header="{loc:Loc Editor_Animation_editor_6F43C2}" Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}"/>
                         <MenuItem Header="{cutscene:CutsceneEditorText Cutscene_Title}" Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}"/>
+                        <MenuItem Header="{audio:AudioWorkspaceText Title}" Click="ShowAudioStudio_Click"/>
+                        <MenuItem Header="{world:WorldMapEditorText Title}" Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}"/>
                     </MenuItem>
                     <MenuItem Header="{loc:Loc Editor_Tools_EA93D6}">
                         <MenuItem Header="{loc:Loc Editor_Settings_74A883}" Command="{x:Static local:HaEditor.Settings}"/>
@@ -378,6 +392,7 @@
                         <MenuItem Header="{loc:Loc Editor_Quest_editor_B81784}" Command="{x:Static local:HaEditor.ShowQuestEditorWindow}"/>
                         <MenuItem Header="{loc:Loc Editor_Animation_editor_6F43C2}" Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}"/>
                         <MenuItem Header="{cutscene:CutsceneEditorText Cutscene_Title}" Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}"/>
+                        <MenuItem Header="{world:WorldMapEditorText Title}" Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}"/>
                     </MenuItem>
                     <MenuItem Header="{loc:Loc Editor_Help_B79CAC}">
                         <MenuItem Header="{loc:Loc Editor_Help_B79CAC}" Command="{x:Static local:HaEditor.Help}"/>
@@ -393,8 +408,8 @@
                         <TextBlock FontFamily="Segoe UI Symbol" FontSize="18" Text="↷"/>
                     </Button>
                     <Button Style="{StaticResource CommandButtonStyle}"
-                            Command="{x:Static local:HaEditor.Export}"
-                            ToolTip="{loc:Loc Editor_Save_map_Ctrl_S_1E254B}">
+                            Command="{x:Static local:HaEditor.Save}"
+                            ToolTip="{loc:Loc Editor_Save_to_WZ_CDEA60}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock FontFamily="Segoe UI Symbol" FontSize="16" Text="▣"/>
                             <TextBlock Margin="7,0,0,0" VerticalAlignment="Center" Text="{loc:Loc Editor_Save_1509F5}"/>
@@ -411,29 +426,75 @@
                 </Border>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource CommandButtonStyle}"
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
                             Command="{x:Static local:HaEditor.ShowQuestEditorWindow}"
                             ToolTip="{loc:Loc Editor_Open_Quest_Editor_C0AFD3}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontSize="15" Text="▤"/>
-                            <TextBlock Margin="7,0,0,0" Text="{loc:Loc Editor_Quests_60D40D}"/>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="15" Text="▤"/>
+                            <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{loc:Loc Editor_Quests_60D40D}"/>
+                        </Grid>
                     </Button>
-                    <Button Style="{StaticResource CommandButtonStyle}"
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
                             Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}"
                             ToolTip="{loc:Loc Editor_Open_Animation_Editor_7B921E}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE7FC;"/>
-                            <TextBlock Margin="7,0,0,0" Text="{loc:Loc Editor_Animations_2D94A1}"/>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE7FC;"/>
+                            <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{loc:Loc Editor_Animations_2D94A1}"/>
+                        </Grid>
                     </Button>
-                    <Button Style="{StaticResource CommandButtonStyle}"
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
                             Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}"
                             ToolTip="{cutscene:CutsceneEditorText Cutscene_Title}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE8B2;"/>
-                            <TextBlock Margin="7,0,0,0" Text="{cutscene:CutsceneEditorText Cutscene_Title}"/>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE8B2;"/>
+                            <StackPanel Grid.Column="1" Margin="7,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock VerticalAlignment="Center" Text="{cutscene:CutsceneEditorText Cutscene_CommandLabel}"/>
+                                <Border Margin="7,0,0,0"
+                                        Padding="4,1"
+                                        VerticalAlignment="Center"
+                                        Background="#E2E8F0"
+                                        CornerRadius="3">
+                                    <TextBlock FontSize="9"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource MutedTextBrush}"
+                                               Text="{cutscene:CutsceneEditorText Cutscene_EditorBadge}"/>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
+                            Click="ShowAudioStudio_Click"
+                            ToolTip="{audio:AudioWorkspaceText Title}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE8D6;"/>
+                            <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{audio:AudioWorkspaceText Title}"/>
+                        </Grid>
+                    </Button>
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
+                            Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}"
+                            ToolTip="{world:WorldMapEditorText Title}"
+                            AutomationProperties.Name="{world:WorldMapEditorText Title}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE707;"/>
+                            <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{world:WorldMapEditorText Title}"/>
+                        </Grid>
                     </Button>
                     <Button Style="{StaticResource CommandButtonStyle}" Click="ShowMapBrowser_Click" ToolTip="{loc:Loc Editor_Search_maps_and_commands_FF74F6}">
                         <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="16" Text="&#xE721;"/>
@@ -819,16 +880,25 @@
                                            Margin="0,3,8,0"
                                            Style="{StaticResource MapExplorerSelectionText}"
                                            ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
-                                <Button x:Name="mapExplorerLoadButton"
-                                        Grid.Row="1"
-                                        Grid.Column="2"
-                                        Width="82"
-                                        VerticalAlignment="Center"
-                                        Style="{StaticResource MapExplorerPrimaryButton}"
-                                        Click="MapExplorerLoadButton_Click"
-                                        Content="{loc:Loc Editor_Open_ED077F}"
-                                        ToolTip="{loc:Loc Editor_Load_selected_map_or_file_1920CB}"
-                                        IsEnabled="False"/>
+                                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal">
+                                    <Button x:Name="mapExplorerWorldMapButton"
+                                            Width="124"
+                                            Margin="0,0,8,0"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource MapExplorerButton}"
+                                            Click="MapExplorerWorldMapButton_Click"
+                                            Content="{world:WorldMapEditorText ShowMapOnWorldMap}"
+                                            ToolTip="{world:WorldMapEditorText ShowMapOnWorldMapHint}"
+                                            IsEnabled="False"/>
+                                    <Button x:Name="mapExplorerLoadButton"
+                                            Width="82"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource MapExplorerPrimaryButton}"
+                                            Click="MapExplorerLoadButton_Click"
+                                            Content="{loc:Loc Editor_Open_ED077F}"
+                                            ToolTip="{loc:Loc Editor_Load_selected_map_or_file_1920CB}"
+                                            IsEnabled="False"/>
+                                </StackPanel>
                             </Grid>
                         </Border>
 
@@ -929,97 +999,57 @@
                                 </Grid>
                             </TabItem>
 
-                            <TabItem x:Name="mapExplorerHamTabItem" Header="{loc:Loc Editor_HAM_4FAE66}">
-                                <Grid Margin="0,8,0,0">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
+                            <TabItem x:Name="mapExplorerImportTabItem" Header="{loc:Loc MapImport_Tab}">
+                                <ScrollViewer Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <Border Padding="8" Background="#EFF6FF" BorderBrush="#BFDBFE"
+                                                BorderThickness="1" CornerRadius="8">
+                                            <StackPanel>
+                                                <Border Width="20" Height="20" HorizontalAlignment="Left"
+                                                        Background="White" CornerRadius="9">
+                                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                               FontFamily="Segoe MDL2 Assets" FontSize="15"
+                                                               Foreground="{StaticResource AccentBrush}" Text="&#xE8B5;"/>
+                                                </Border>
+                                                <TextBlock Margin="0,12,0,0" FontSize="17" FontWeight="SemiBold"
+                                                           Foreground="#0F172A" Text="{loc:Loc MapImport_CardTitle}"/>
+                                                <TextBlock Margin="0,6,0,0" Foreground="#475569" TextWrapping="Wrap"
+                                                           Text="{loc:Loc MapImport_CardDescription}"/>
+                                            </StackPanel>
+                                        </Border>
 
-                                    <TextBlock Grid.Row="0"
-                                               Style="{StaticResource MapExplorerLabelText}"
-                                               Text="{loc:Loc Editor_Map_file_1C2EF1}"/>
+                                        <Border Margin="0,10,0,0" Padding="8" Background="White"
+                                                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1" CornerRadius="7">
+                                            <StackPanel>
+                                                <TextBlock Style="{StaticResource MapExplorerLabelText}" Text="{loc:Loc MapImport_CurrentDestination}"/>
+                                                <TextBlock x:Name="mapExplorerImportDestinationTextBlock" Margin="0,4,0,0"
+                                                           Foreground="#334155" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
 
-                                    <Grid Grid.Row="1"
-                                          Margin="0,4,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
+                                        <Border Margin="0,10,0,0" Padding="8" Background="White"
+                                                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1" CornerRadius="7">
+                                            <StackPanel>
+                                                <TextBlock FontWeight="SemiBold" Foreground="#0F172A" Text="{loc:Loc MapImport_IncludedReview}"/>
+                                                <UniformGrid Margin="10,5,0,0" Columns="1">
+                                                    <TextBlock Margin="0,3" Foreground="#475569" Text="{loc:Loc MapImport_CheckMaps}"/>
+                                                    <TextBlock Margin="0,3" Foreground="#475569" Text="{loc:Loc MapImport_CheckVisuals}"/>
+                                                    <TextBlock Margin="0,3" Foreground="#475569" Text="{loc:Loc MapImport_CheckLife}"/>
+                                                    <TextBlock Margin="0,3" Foreground="#475569" Text="{loc:Loc MapImport_CheckStrings}"/>
+                                                    <TextBlock Margin="0,3" Foreground="#475569" Text="{loc:Loc MapImport_CheckBgm}"/>
+                                                    <TextBlock Margin="0,3" Foreground="#475569" Text="{loc:Loc MapImport_CheckConflicts}"/>
+                                                </UniformGrid>
+                                            </StackPanel>
+                                        </Border>
 
-                                        <TextBox x:Name="mapExplorerHamPathTextBox"
-                                                 Grid.Column="0"
-                                                 Margin="0,0,8,0"
-                                                 Style="{StaticResource MapExplorerTextBox}"
-                                                 TextChanged="MapExplorerHamPathTextBox_TextChanged"/>
-                                        <Button x:Name="mapExplorerBrowseHamButton"
-                                                Grid.Column="1"
-                                                Width="72"
-                                                Style="{StaticResource MapExplorerButton}"
-                                                Click="MapExplorerBrowseHamButton_Click"
-                                                Content="{loc:Loc Editor_Browse_3227AA}"/>
-                                    </Grid>
-
-                                    <Border Grid.Row="2"
-                                            Margin="0,8,0,0"
-                                            Padding="8"
-                                            BorderBrush="#FFD0D0D0"
-                                            BorderThickness="1"
-                                            Background="#FFF8F8F8">
-                                        <TextBlock Text="{Binding Text, ElementName=mapExplorerHamPathTextBox}"
-                                                   Style="{StaticResource MapExplorerStatusText}"
-                                                   ToolTip="{Binding Text, ElementName=mapExplorerHamPathTextBox}"/>
-                                    </Border>
-                                </Grid>
+                                        <Button Margin="0,12,0,0" Height="40" HorizontalAlignment="Stretch"
+                                                Style="{StaticResource MapExplorerPrimaryButton}"
+                                                Click="MapExplorerImportButton_Click"
+                                                Content="{loc:Loc MapImport_ChooseSource}"/>
+                                    </StackPanel>
+                                </ScrollViewer>
                             </TabItem>
 
-                            <TabItem x:Name="mapExplorerXmlTabItem" Header="{loc:Loc Editor_XML_40658E}">
-                                <Grid Margin="0,8,0,0">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Grid.Row="0"
-                                               Style="{StaticResource MapExplorerLabelText}"
-                                               Text="{loc:Loc Editor_Map_XML_B46847}"/>
-
-                                    <Grid Grid.Row="1"
-                                          Margin="0,4,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <TextBox x:Name="mapExplorerXmlPathTextBox"
-                                                 Grid.Column="0"
-                                                 Margin="0,0,8,0"
-                                                 Style="{StaticResource MapExplorerTextBox}"
-                                                 TextChanged="MapExplorerXmlPathTextBox_TextChanged"/>
-                                        <Button x:Name="mapExplorerBrowseXmlButton"
-                                                Grid.Column="1"
-                                                Width="72"
-                                                Style="{StaticResource MapExplorerButton}"
-                                                Click="MapExplorerBrowseXmlButton_Click"
-                                                Content="{loc:Loc Editor_Browse_3227AA}"/>
-                                    </Grid>
-
-                                    <Border Grid.Row="2"
-                                            Margin="0,8,0,0"
-                                            Padding="8"
-                                            BorderBrush="#FFD0D0D0"
-                                            BorderThickness="1"
-                                            Background="#FFF8F8F8">
-                                        <TextBlock Text="{Binding Text, ElementName=mapExplorerXmlPathTextBox}"
-                                                   Style="{StaticResource MapExplorerStatusText}"
-                                                   ToolTip="{Binding Text, ElementName=mapExplorerXmlPathTextBox}"/>
-                                    </Border>
-                                </Grid>
-                            </TabItem>
                         </TabControl>
 
                         <Expander x:Name="mapExplorerSourceActionsBorder"

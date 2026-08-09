@@ -1,6 +1,7 @@
 using MapleLib.WzLib.WzProperties;
 using Microsoft.Xna.Framework.Audio;
 using System;
+using System.Diagnostics;
 
 namespace HaCreator.MapSimulator.Managers
 {
@@ -17,18 +18,45 @@ namespace HaCreator.MapSimulator.Managers
 
         public MonoGameBgmPlayer(WzBinaryProperty sound, bool looped, int startOffsetMs, float volume = 0.5f)
         {
-            _soundEffect = MonoGameAudioFactory.CreateSoundEffect(
+            SoundEffect soundEffect = MonoGameAudioFactory.CreateSoundEffect(
                 sound,
                 startOffsetMs,
                 out TimeSpan availableDuration,
                 out TimeSpan totalDuration,
                 out TimeSpan actualOffset);
-            _instance = _soundEffect.CreateInstance();
-            _instance.IsLooped = looped;
-            _instance.Volume = volume;
-            Duration = availableDuration;
-            TotalDuration = totalDuration;
-            StartOffset = actualOffset;
+            SoundEffectInstance instance = null;
+            try
+            {
+                instance = soundEffect.CreateInstance();
+                instance.IsLooped = looped;
+                instance.Volume = volume;
+                _soundEffect = soundEffect;
+                _instance = instance;
+                Duration = availableDuration;
+                TotalDuration = totalDuration;
+                StartOffset = actualOffset;
+            }
+            catch
+            {
+                instance?.Dispose();
+                soundEffect.Dispose();
+                throw;
+            }
+        }
+
+        public static bool TryCreate(WzBinaryProperty sound, bool looped, int startOffsetMs, float volume, out MonoGameBgmPlayer player)
+        {
+            try
+            {
+                player = new MonoGameBgmPlayer(sound, looped, startOffsetMs, volume);
+                return true;
+            }
+            catch (Exception exception) when (exception is not OutOfMemoryException and not AccessViolationException)
+            {
+                Debug.WriteLine($"Unable to create BGM playback: {exception.Message}");
+                player = null;
+                return false;
+            }
         }
 
         public SoundState State => _instance?.State ?? SoundState.Stopped;

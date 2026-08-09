@@ -16,6 +16,7 @@
   <data name="Init_RecommendedBadge" xml:space="preserve"><value>Recommended</value></data>
   <data name="Init_ImgRecommendedTitle" xml:space="preserve"><value>Best experience: use an IMG version</value></data>
   <data name="Init_ImgRecommendedHint" xml:space="preserve"><value>Extract once, then enjoy faster startup, reliable editing, and the best-supported workflow in HaCreator.</value></data>
+  <data name="Init_ImgGitHint" xml:space="preserve"><value>Tip: Keep the extracted .img files in a Git repository to make WZ edits easier to track and compare.</value></data>
   <data name="Init_NoVersions" xml:space="preserve"><value>No versions found.
 
 Choose Extract new to extract WZ files to IMG format, or Browse to add an existing folder.</value></data>
@@ -288,9 +289,6 @@ This will permanently delete all extracted IMG files.</value></data>
   <data name="Editor_HaCreator_resurrected_8AD585" xml:space="preserve">
     <value>HaCreator resurrected</value>
   </data>
-  <data name="Editor_HAM_4FAE66" xml:space="preserve">
-    <value>HAM</value>
-  </data>
   <data name="Editor_Help_B79CAC" xml:space="preserve">
     <value>Help</value>
   </data>
@@ -349,9 +347,6 @@ This will permanently delete all extracted IMG files.</value></data>
   <data name="Editor_Map_diagnostics_269074" xml:space="preserve">
     <value>Map diagnostics</value>
   </data>
-  <data name="Editor_Map_file_1C2EF1" xml:space="preserve">
-    <value>Map file</value>
-  </data>
   <data name="Editor_Map_Objects_4CD3A1" xml:space="preserve">
     <value>Map Objects</value>
   </data>
@@ -364,9 +359,6 @@ This will permanently delete all extracted IMG files.</value></data>
   </data>
   <data name="Editor_Map_Simulator_68DDBB" xml:space="preserve">
     <value>Map Simulator</value>
-  </data>
-  <data name="Editor_Map_XML_B46847" xml:space="preserve">
-    <value>Map XML</value>
   </data>
   <data name="Editor_Maps_119E66" xml:space="preserve">
     <value>Maps</value>
@@ -520,15 +512,6 @@ This will permanently delete all extracted IMG files.</value></data>
   <data name="Editor_Save_1509F5" xml:space="preserve">
     <value>Save</value>
   </data>
-  <data name="Editor_Save_map_AB74BA" xml:space="preserve">
-    <value>Save map</value>
-  </data>
-  <data name="Editor_Save_map_Ctrl_S_1E254B" xml:space="preserve">
-    <value>Save map (Ctrl+S)</value>
-  </data>
-  <data name="Editor_Save_map_1EA04E" xml:space="preserve">
-    <value>Save map...</value>
-  </data>
   <data name="Editor_Save_to_WZ_A5F5FB" xml:space="preserve">
     <value>Save to WZ</value>
   </data>
@@ -637,9 +620,6 @@ This will permanently delete all extracted IMG files.</value></data>
     <value>Virtual
 </value>
   </data>
-  <data name="Editor_XML_40658E" xml:space="preserve">
-    <value>XML</value>
-  </data>
   <data name="Editor_Zoom_509C51" xml:space="preserve">
     <value>Zoom</value>
   </data>
@@ -699,18 +679,6 @@ This will permanently delete all extracted IMG files.</value></data>
   <data name="Editor_Loading" xml:space="preserve">
     <value>Loading...</value>
   </data>
-  <data name="Editor_SelectHamMapTitle" xml:space="preserve">
-    <value>Select a map to load...</value>
-  </data>
-  <data name="Editor_HamMapFileFilter" xml:space="preserve">
-    <value>HaCreator map file (*.ham)|*.ham</value>
-  </data>
-  <data name="Editor_SelectXmlTitle" xml:space="preserve">
-    <value>Select XML to load...</value>
-  </data>
-  <data name="Editor_XmlFileFilter" xml:space="preserve">
-    <value>Extensible Markup Language file (*.xml)|*.xml</value>
-  </data>
   <data name="Editor_ResolvingMissingMaps" xml:space="preserve">
     <value>Resolving missing map strings...</value>
   </data>
@@ -743,4 +711,4 @@ This will permanently delete all extracted IMG files.</value></data>
   <data name="Editor_Resolution_0F91A2" xml:space="preserve">
     <value>Resolution</value>
   </data>
-</root>
+<data name="MapImport_Tab" xml:space="preserve"><value>Import</value></data><data name="MapImport_CardTitle" xml:space="preserve"><value>Bring a map forward from another version</value></data><data name="MapImport_CardDescription" xml:space="preserve"><value>Choose maps from another extracted WZ export. HaCreator will trace and review their referenced assets before anything is written to the version you currently have loaded.</value></data><data name="MapImport_CurrentDestination" xml:space="preserve"><value>CURRENT DESTINATION</value></data><data name="MapImport_IncludedReview" xml:space="preserve"><value>Included in dependency review</value></data><data name="MapImport_CheckMaps" xml:space="preserve"><value>✓ Map IMG and linked map</value></data><data name="MapImport_CheckVisuals" xml:space="preserve"><value>✓ Tiles, objects, backgrounds</value></data><data name="MapImport_CheckLife" xml:space="preserve"><value>✓ NPCs, mobs, reactors</value></data><data name="MapImport_CheckStrings" xml:space="preserve"><value>✓ Map and life strings</value></data><data name="MapImport_CheckBgm" xml:space="preserve"><value>✓ Referenced BGM entries</value></data><data name="MapImport_CheckConflicts" xml:space="preserve"><value>✓ Existing-file conflicts</value></data><data name="MapImport_ChooseSource" xml:space="preserve"><value>Choose source version and maps…</value></data><data name="MapImport_CurrentDataSource" xml:space="preserve"><value>Current HaCreator data source</value></data><data name="MapImport_SelectSourceStatus" xml:space="preserve"><value>Select an extracted source version and review its map dependencies.</value></data><data name="MapImport_WritableDestination" xml:space="preserve"><value>Cross-version map import requires a writable extracted IMG destination.</value></data></root>

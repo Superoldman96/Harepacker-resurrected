@@ -20,11 +20,18 @@ namespace HaCreator.MapSimulator.Loaders
     public static partial class UIWindowLoader
     {
         #region Inventory Window
+        public static InventoryUI CreateInventoryWindow(
+            WzImage uiWindowImage, WzImage soundUIImage,
+            GraphicsDevice device, int screenWidth, int screenHeight)
+        {
+            return CreateInventoryWindow(uiWindowImage, null, soundUIImage, device, screenWidth, screenHeight);
+        }
+
         /// <summary>
         /// Create the Inventory window from UI.wz/UIWindow.img/Item
         /// </summary>
         public static InventoryUI CreateInventoryWindow(
-            WzImage uiWindowImage, WzImage soundUIImage,
+            WzImage uiWindowImage, WzImage basicImage, WzImage soundUIImage,
             GraphicsDevice device, int screenWidth, int screenHeight)
         {
             WzSubProperty itemProperty = (WzSubProperty)uiWindowImage?["Item"];
@@ -79,11 +86,13 @@ namespace HaCreator.MapSimulator.Loaders
 
 
 
-            UIObject tabEquip = LoadTabButton(itemProperty, "Tab0", btClickSound, btOverSound, device);
-            UIObject tabUse = LoadTabButton(itemProperty, "Tab1", btClickSound, btOverSound, device);
-            UIObject tabSetup = LoadTabButton(itemProperty, "Tab2", btClickSound, btOverSound, device);
-            UIObject tabEtc = LoadTabButton(itemProperty, "Tab3", btClickSound, btOverSound, device);
-            UIObject tabCash = LoadTabButton(itemProperty, "Tab4", btClickSound, btOverSound, device);
+            // The legacy client owns the five tab faces under Item/Tab/{enabled,disabled}/0..4;
+            // it does not publish the later Tab0..Tab4 button containers.
+            UIObject tabEquip = LoadInventoryCanvasTabButton(itemProperty, "0", btClickSound, btOverSound, device);
+            UIObject tabUse = LoadInventoryCanvasTabButton(itemProperty, "1", btClickSound, btOverSound, device);
+            UIObject tabSetup = LoadInventoryCanvasTabButton(itemProperty, "2", btClickSound, btOverSound, device);
+            UIObject tabEtc = LoadInventoryCanvasTabButton(itemProperty, "3", btClickSound, btOverSound, device);
+            UIObject tabCash = LoadInventoryCanvasTabButton(itemProperty, "4", btClickSound, btOverSound, device);
 
 
             inventory.InitializeTabs(tabEquip, tabUse, tabSetup, tabEtc, tabCash);
@@ -119,7 +128,8 @@ namespace HaCreator.MapSimulator.Loaders
 
             // Load close button
 
-            UIObject closeBtn = LoadButton(itemProperty, "BtClose", btClickSound, btOverSound, device);
+            UIObject closeBtn = LoadButton(itemProperty, "BtClose", btClickSound, btOverSound, device)
+                ?? CreateUserInfoCloseButton(basicImage, btClickSound, btOverSound, device, bgTexture.Width);
 
             inventory.InitializeCloseButton(closeBtn);
 
@@ -172,7 +182,7 @@ namespace HaCreator.MapSimulator.Loaders
             {
                 return CreateInventoryWindowBigBang(uiWindow2Image, uiWindow1Image, basicImage, soundUIImage, device, screenWidth, screenHeight);
             }
-            return CreateInventoryWindow(uiWindow1Image, soundUIImage, device, screenWidth, screenHeight);
+            return CreateInventoryWindow(uiWindow1Image, basicImage, soundUIImage, device, screenWidth, screenHeight);
         }
 
 

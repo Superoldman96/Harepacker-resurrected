@@ -2406,42 +2406,75 @@ namespace HaCreator.MapSimulator.Loaders
         }
 
 
-        private static QuickSlotUI CreateQuickSlotWindow(WzImage uiWindow2Image, GraphicsDevice device, int screenWidth, int screenHeight)
+        private static QuickSlotUI CreateQuickSlotWindow(
+            WzImage uiWindow1Image,
+            WzImage uiWindow2Image,
+            GraphicsDevice device,
+            int screenWidth,
+            int screenHeight,
+            bool isBigBang)
         {
-            const int width = 286;
-            const int height = 96;
-
-
-            Texture2D frameTexture = new Texture2D(device, width, height);
-            Color[] data = new Color[width * height];
-            Color fill = new Color(18, 24, 34, 130);
-            Color border = new Color(85, 98, 120, 180);
-
-
-            for (int y = 0; y < height; y++)
+            Texture2D frameTexture = null;
+            bool isVUpdate = Program.FindImage("UI", "StatusBar3.img") != null;
+            if (isVUpdate)
             {
-                for (int x = 0; x < width; x++)
-                {
-                    bool isBorder = x == 0 || y == 0 || x == width - 1 || y == height - 1;
-                    data[(y * width) + x] = isBorder ? border : fill;
-                }
+                WzImage modernQuickSlotImage = Program.FindImage("UI", "UIQuickSlot.img");
+                frameTexture = LoadCanvasTexture(
+                    modernQuickSlotImage?["quickSlot"] as WzSubProperty,
+                    "backgrnd",
+                    device);
+            }
+            else if (!isBigBang)
+            {
+                WzImage statusBarImage = Program.FindImage("UI", "StatusBar.img");
+                frameTexture = LoadCanvasTexture(statusBarImage?["base"] as WzSubProperty, "quickSlot", device);
             }
 
+            if (frameTexture == null)
+            {
+                const int fallbackWidth = 286;
+                const int fallbackHeight = 96;
+                frameTexture = new Texture2D(device, fallbackWidth, fallbackHeight);
+                Color[] data = new Color[fallbackWidth * fallbackHeight];
+                Color fill = new Color(18, 24, 34, 130);
+                Color border = new Color(85, 98, 120, 180);
 
-            frameTexture.SetData(data);
+                for (int y = 0; y < fallbackHeight; y++)
+                {
+                    for (int x = 0; x < fallbackWidth; x++)
+                    {
+                        bool isBorder = x == 0 || y == 0 || x == fallbackWidth - 1 || y == fallbackHeight - 1;
+                        data[(y * fallbackWidth) + x] = isBorder ? border : fill;
+                    }
+                }
+
+                frameTexture.SetData(data);
+            }
 
 
 
             IDXObject frame = new DXObject(0, 0, frameTexture, 0);
 
             QuickSlotUI quickSlot = new QuickSlotUI(frame, device);
+            if (!isBigBang && !isVUpdate)
+            {
+                quickSlot.UseLegacyTwoRowLayout();
+            }
 
-            quickSlot.Position = new Point((screenWidth - width) / 2, Math.Max(20, screenHeight - height - 120));
+            quickSlot.Position = isVUpdate
+                ? new Point(
+                    Math.Max(0, screenWidth - frameTexture.Width - 8),
+                    Math.Max(0, screenHeight - frameTexture.Height))
+                : isBigBang
+                ? new Point((screenWidth - frameTexture.Width) / 2, Math.Max(20, screenHeight - frameTexture.Height - 120))
+                : new Point(
+                    Math.Max(0, screenWidth - frameTexture.Width - 8),
+                    Math.Max(20, screenHeight - frameTexture.Height - 71));
 
 
 
-            WzSubProperty skillProperty = uiWindow2Image?["Skill"] as WzSubProperty;
-            WzSubProperty mainProperty = skillProperty?["main"] as WzSubProperty;
+            WzSubProperty skillProperty = (isBigBang ? uiWindow2Image : uiWindow1Image)?["Skill"] as WzSubProperty;
+            WzSubProperty mainProperty = isBigBang ? skillProperty?["main"] as WzSubProperty : skillProperty;
             WzSubProperty coolTimeProperty = mainProperty?["CoolTime"] as WzSubProperty;
             if (coolTimeProperty != null)
             {
@@ -2454,7 +2487,7 @@ namespace HaCreator.MapSimulator.Loaders
             quickSlot.SetTooltipTextures(UILoader.LoadSkillTooltipTextures(device));
             quickSlot.SetTooltipOrigins(UILoader.LoadSkillTooltipOrigins());
 
-            WzSubProperty equipTooltipProperty = uiWindow2Image?["ToolTip"]?["Equip"] as WzSubProperty;
+            WzSubProperty equipTooltipProperty = (isBigBang ? uiWindow2Image : uiWindow1Image)?["ToolTip"]?["Equip"] as WzSubProperty;
             if (equipTooltipProperty != null)
             {
                 quickSlot.SetEquipTooltipAssets(new EquipUIBigBang.EquipTooltipAssets

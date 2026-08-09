@@ -662,6 +662,18 @@ namespace HaCreator.MapSimulator.UI
             }
         }
 
+        /// <summary>
+        /// Configures runtime world-map surfaces from the shared World Map Editor
+        /// model.  Canvas resolution is supplied by the graphics-thread caller.
+        /// </summary>
+        public void ConfigureWorldMapDocuments(
+            IEnumerable<global::HaCreator.WorldMap.WorldMapDocument> documents,
+            Func<global::HaCreator.WorldMap.WorldMapCanvasRef, Texture2D> textureResolver)
+        {
+            ConfigureWorldMapSurfaces(global::HaCreator.WorldMap.WorldMapRuntimeAdapter
+                .ToSurfaceDefinitions(documents, textureResolver));
+        }
+
         public bool HasEntry(int mapId)
         {
             return mapId > 0 && _allEntries.Any(entry => entry.MapId == mapId);

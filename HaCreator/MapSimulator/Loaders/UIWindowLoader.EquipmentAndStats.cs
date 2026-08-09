@@ -20,6 +20,13 @@ namespace HaCreator.MapSimulator.Loaders
     public static partial class UIWindowLoader
     {
         #region Equipment Window
+        public static EquipUI CreateEquipWindow(
+            WzImage uiWindowImage, WzImage soundUIImage,
+            GraphicsDevice device, int screenWidth, int screenHeight)
+        {
+            return CreateEquipWindow(uiWindowImage, null, soundUIImage, device, screenWidth, screenHeight);
+        }
+
         /// <summary>
         /// Create the Equipment window - selects pre-BB or post-BB version based on isBigBang
         /// </summary>
@@ -31,7 +38,7 @@ namespace HaCreator.MapSimulator.Loaders
             {
                 return CreateEquipWindowBigBang(uiWindow2Image, uiWindow1Image, basicImage, soundUIImage, device, screenWidth, screenHeight);
             }
-            return CreateEquipWindow(uiWindow1Image, soundUIImage, device, screenWidth, screenHeight);
+            return CreateEquipWindow(uiWindow1Image, basicImage, soundUIImage, device, screenWidth, screenHeight);
         }
 
 
@@ -39,7 +46,7 @@ namespace HaCreator.MapSimulator.Loaders
         /// Create the Equipment window from UI.wz/UIWindow.img/Equip (Pre-Big Bang)
         /// </summary>
         public static EquipUI CreateEquipWindow(
-            WzImage uiWindowImage, WzImage soundUIImage,
+            WzImage uiWindowImage, WzImage basicImage, WzImage soundUIImage,
             GraphicsDevice device, int screenWidth, int screenHeight)
         {
             WzSubProperty equipProperty = (WzSubProperty)uiWindowImage?["Equip"];
@@ -79,7 +86,8 @@ namespace HaCreator.MapSimulator.Loaders
 
 
 
-            UIObject closeBtn = LoadButton(equipProperty, "BtClose", btClickSound, btOverSound, device);
+            UIObject closeBtn = LoadButton(equipProperty, "BtClose", btClickSound, btOverSound, device)
+                ?? CreateUserInfoCloseButton(basicImage, btClickSound, btOverSound, device, bgTexture.Width);
             equip.InitializeCloseButton(closeBtn);
             equip.SetCompanionPanes(
                 LoadCanvasObject(equipProperty, "pet", device, out Point _),
@@ -588,7 +596,8 @@ namespace HaCreator.MapSimulator.Loaders
 
 
 
-            UIObject closeBtn = LoadButton(skillProperty, "BtClose", btClickSound, btOverSound, device);
+            UIObject closeBtn = LoadButton(skillProperty, "BtClose", btClickSound, btOverSound, device)
+                ?? CreateUserInfoCloseButton(basicImage, btClickSound, btOverSound, device, bgTexture.Width);
 
             skill.InitializeCloseButton(closeBtn);
 

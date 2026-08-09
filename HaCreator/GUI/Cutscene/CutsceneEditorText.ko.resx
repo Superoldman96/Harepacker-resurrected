@@ -15,6 +15,12 @@
   <data name="Cutscene_Title">
     <value>컷신 작업 영역</value>
   </data>
+  <data name="Cutscene_CommandLabel">
+    <value>컷신</value>
+  </data>
+  <data name="Cutscene_EditorBadge">
+    <value>편집기</value>
+  </data>
   <data name="Cutscene_Save">
     <value>변경 내용 저장</value>
   </data>

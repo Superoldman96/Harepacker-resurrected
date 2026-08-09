@@ -203,6 +203,7 @@
   <data name="AISettings_ModelRequired" xml:space="preserve"><value>Please select or enter a model first.</value></data>
   <data name="AISettings_ConnectionSuccessful" xml:space="preserve"><value>Connection successful!</value></data>
   <data name="AISettings_ConnectionFailed" xml:space="preserve"><value>Connection failed. Check the endpoint, model, and API key.</value></data>
+  <data name="AISettings_ConnectionFailedDetail" xml:space="preserve"><value>Connection failed: {0}</value></data>
   <data name="AISettings_Error" xml:space="preserve"><value>Error: {0}</value></data>
   <data name="Error_AddingImage" xml:space="preserve"><value>Error adding image: {0}</value></data>
   <data name="Common_Error" xml:space="preserve"><value>Error</value></data>
@@ -255,4 +256,10 @@
   <data name="AISettings_BuiltInPresetsPending" xml:space="preserve"><value>{0} built-in presets. Endpoint discovery starts automatically.</value></data>
   <data name="AISettings_BuiltInPresetsOnly" xml:space="preserve"><value>{0} built-in presets available. No endpoint models discovered.</value></data>
   <data name="AISettings_ModelCatalogSummary" xml:space="preserve"><value>{0} built-in + {1} endpoint; {2} unique model(s).</value></data>
+  <data name="AISettings_InvalidLimits" xml:space="preserve"><value>Enter valid limits: 1–200 tool turns and 256–1,000,000 output tokens.</value></data>
+  <data name="The endpoint is usually an OpenRouter or local OpenAI-compatible server." xml:space="preserve"><value>The endpoint is usually an OpenRouter or local OpenAI-compatible server.</value></data>
+  <data name="Use Auto to let the selected model choose its own thinking level." xml:space="preserve"><value>Use Auto to let the selected model choose its own thinking level.</value></data>
+  <data name="Maximum tool turns" xml:space="preserve"><value>Maximum tool turns</value></data>
+  <data name="Maximum output tokens" xml:space="preserve"><value>Maximum output tokens</value></data>
+  <data name="Higher limits may increase cost or latency." xml:space="preserve"><value>Higher limits may increase cost or latency.</value></data>
 </root>

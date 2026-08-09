@@ -10,11 +10,13 @@ using System.Windows.Media;
 using Forms = System.Windows.Forms;
 using DrawingColor = System.Drawing.Color;
 using HaSharedLibrary.GUI;
+using MapleLib.Img;
 
 namespace HaCreator.GUI
 {
     public partial class UserSettingsForm : Window
     {
+        public string SettingsPath => Program.GetLocalSettingsPath();
         private readonly Dictionary<string, TextBox> values = new();
         private readonly Dictionary<string, Button> colors = new();
 
@@ -88,6 +90,27 @@ namespace HaCreator.GUI
                 DialogResult = true;
             }
             catch (Exception ex) { MessageBox.Show(this, DialogTextExtension.Format("Dialog_InvalidSettingValue", ex.Message), DialogTextExtension.Get("Dialog_InvalidSettings"), MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+        private void ResetAllSettings_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show(this, UserSettingsTextExtension.Get("ConfirmReset"),
+                    UserSettingsTextExtension.Get("ResetAll"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+            try
+            {
+                string[] paths = { Program.GetLocalSettingsPath(), HaCreatorPaths.DefaultConfigPath };
+                foreach (string path in paths) if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
+                Program.SkipSettingsSave = true;
+                MessageBox.Show(this, UserSettingsTextExtension.Get("ResetRestart"),
+                    UserSettingsTextExtension.Get("ResetAll"), MessageBoxButton.OK, MessageBoxImage.Information);
+                Close();
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(this, string.Format(UserSettingsTextExtension.Get("ResetFailed"), exception.Message),
+                    UserSettingsTextExtension.Get("ResetAll"), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         public static DrawingColor XNAToSystemColor(Microsoft.Xna.Framework.Color color) => DrawingColor.FromArgb(color.A, color.R, color.G, color.B);

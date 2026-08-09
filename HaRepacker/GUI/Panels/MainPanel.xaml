@@ -423,6 +423,11 @@
                                 <MenuItem Header="Change Image" x:Name="menuItem_changeImage" Click="MenuItem_changeImage_Click"/>
                                 <MenuItem Header="Change Sound" x:Name="menuItem_changeSound" Click="MenuItem_changeSound_Click"/>
                                 <MenuItem Header="Save Sound" x:Name="menuItem_saveSound" Click="MenuItem_saveSound_Click"/>
+                                <Separator/>
+                                <MenuItem Header="Open in Audio Studio" x:Name="menuItem_openAudioStudio" Click="MenuItem_openAudioStudio_Click"/>
+                                <MenuItem Header="Apply .hasound project and bake" x:Name="menuItem_applyAudioProject" Click="MenuItem_applyAudioProject_Click"/>
+                                <MenuItem Header="Export decoded WAV" x:Name="menuItem_exportDecodedWav" Click="MenuItem_exportDecodedWav_Click"/>
+                                <MenuItem Header="Show audio metadata" x:Name="menuItem_audioMetadata" Click="MenuItem_audioMetadata_Click"/>
                                 <MenuItem Header="Save Image" x:Name="menuItem_saveImage" Click="menuItem_saveImage_Click"/>
                                 <MenuItem Header="Export file" x:Name="menuItem_exportFile" Click="menuItem_ExportFile_Click"/>
                             </ContextMenu>

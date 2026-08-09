@@ -203,6 +203,7 @@
   <data name="AISettings_ModelRequired" xml:space="preserve"><value>请先选择或输入模型。</value></data>
   <data name="AISettings_ConnectionSuccessful" xml:space="preserve"><value>连接成功！</value></data>
   <data name="AISettings_ConnectionFailed" xml:space="preserve"><value>连接失败。请检查端点、模型和 API 密钥。</value></data>
+  <data name="AISettings_ConnectionFailedDetail" xml:space="preserve"><value>连接失败：{0}</value></data>
   <data name="AISettings_Error" xml:space="preserve"><value>错误：{0}</value></data>
   <data name="Error_AddingImage" xml:space="preserve"><value>添加图像时出错：{0}</value></data>
   <data name="Common_Error" xml:space="preserve"><value>错误</value></data>
@@ -255,4 +256,10 @@
   <data name="AISettings_BuiltInPresetsPending" xml:space="preserve"><value>{0} 个内置预设。端点发现将自动开始。</value></data>
   <data name="AISettings_BuiltInPresetsOnly" xml:space="preserve"><value>有 {0} 个内置预设可用。未发现端点模型。</value></data>
   <data name="AISettings_ModelCatalogSummary" xml:space="preserve"><value>{0} 个内置模型 + {1} 个端点模型；共 {2} 个唯一模型。</value></data>
+  <data name="AISettings_InvalidLimits" xml:space="preserve"><value>请输入有效限制：工具轮次 1–200，输出令牌 256–1,000,000。</value></data>
+  <data name="The endpoint is usually an OpenRouter or local OpenAI-compatible server." xml:space="preserve"><value>端点通常是 OpenRouter 或本地 OpenAI 兼容服务器。</value></data>
+  <data name="Use Auto to let the selected model choose its own thinking level." xml:space="preserve"><value>选择“自动”可让所选模型决定思考强度。</value></data>
+  <data name="Maximum tool turns" xml:space="preserve"><value>最大工具轮次</value></data>
+  <data name="Maximum output tokens" xml:space="preserve"><value>最大输出令牌数</value></data>
+  <data name="Higher limits may increase cost or latency." xml:space="preserve"><value>较高的限制可能增加费用或延迟。</value></data>
 </root>

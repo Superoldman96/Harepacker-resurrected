@@ -203,6 +203,7 @@
   <data name="AISettings_ModelRequired" xml:space="preserve"><value>先にモデルを選択または入力してください。</value></data>
   <data name="AISettings_ConnectionSuccessful" xml:space="preserve"><value>接続に成功しました。</value></data>
   <data name="AISettings_ConnectionFailed" xml:space="preserve"><value>接続に失敗しました。エンドポイント、モデル、API キーを確認してください。</value></data>
+  <data name="AISettings_ConnectionFailedDetail" xml:space="preserve"><value>接続に失敗しました: {0}</value></data>
   <data name="AISettings_Error" xml:space="preserve"><value>エラー: {0}</value></data>
   <data name="Error_AddingImage" xml:space="preserve"><value>画像追加エラー: {0}</value></data>
   <data name="Common_Error" xml:space="preserve"><value>エラー</value></data>
@@ -255,4 +256,10 @@
   <data name="AISettings_BuiltInPresetsPending" xml:space="preserve"><value>組み込みプリセットは {0} 個です。エンドポイントの検索は自動的に開始されます。</value></data>
   <data name="AISettings_BuiltInPresetsOnly" xml:space="preserve"><value>組み込みプリセットを {0} 個利用できます。エンドポイントモデルは見つかりませんでした。</value></data>
   <data name="AISettings_ModelCatalogSummary" xml:space="preserve"><value>組み込み {0} 個 + エンドポイント {1} 個、固有モデル {2} 個。</value></data>
+  <data name="AISettings_InvalidLimits" xml:space="preserve"><value>有効な上限を入力してください。ツールターンは 1～200、出力トークンは 256～1,000,000 です。</value></data>
+  <data name="The endpoint is usually an OpenRouter or local OpenAI-compatible server." xml:space="preserve"><value>通常、エンドポイントには OpenRouter またはローカルの OpenAI 互換サーバーを指定します。</value></data>
+  <data name="Use Auto to let the selected model choose its own thinking level." xml:space="preserve"><value>自動を選ぶと、選択したモデルが思考レベルを決定します。</value></data>
+  <data name="Maximum tool turns" xml:space="preserve"><value>ツールターンの上限</value></data>
+  <data name="Maximum output tokens" xml:space="preserve"><value>出力トークンの上限</value></data>
+  <data name="Higher limits may increase cost or latency." xml:space="preserve"><value>上限を高くすると、コストや待ち時間が増える場合があります。</value></data>
 </root>

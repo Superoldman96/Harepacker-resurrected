@@ -267,31 +267,37 @@ namespace HaCreator.MapSimulator.UI
             this._btnMap = _btnMap;
             this._btnNpc = _btnNpc;
 
-            uiButtons.Add(_btnMin);
-            uiButtons.Add(_btnMax);
+            if (_btnMin != null)
+                uiButtons.Add(_btnMin);
+            if (_btnMax != null)
+                uiButtons.Add(_btnMax);
             if (_btnBig != null)
                 uiButtons.Add(_btnBig);
             if (_btnSmall != null)
                 uiButtons.Add(_btnSmall);
             if (_btnNpc != null)
                 uiButtons.Add(_btnNpc);
-            uiButtons.Add(_btnMap);
+            if (_btnMap != null)
+                uiButtons.Add(_btnMap);
 
             _useLegacyOptionButtonCycle = _btnSmall == null || _expandedFrame == null;
-            _btnMax.SetButtonState(_useLegacyOptionButtonCycle ? UIObjectState.Normal : UIObjectState.Disabled); // start maximised
-            _btnMin.SetButtonState(UIObjectState.Normal);
+            _btnMax?.SetButtonState(_useLegacyOptionButtonCycle ? UIObjectState.Normal : UIObjectState.Disabled); // start maximised
+            _btnMin?.SetButtonState(UIObjectState.Normal);
             if (_btnSmall != null)
                 _btnSmall.SetVisible(false);
 
-            _btnMin.ButtonClickReleased += ObjUIBtMin_ButtonClickReleased;
-            _btnMax.ButtonClickReleased += ObjUIBtMax_ButtonClickReleased;
+            if (_btnMin != null)
+                _btnMin.ButtonClickReleased += ObjUIBtMin_ButtonClickReleased;
+            if (_btnMax != null)
+                _btnMax.ButtonClickReleased += ObjUIBtMax_ButtonClickReleased;
             if (_btnBig != null)
                 _btnBig.ButtonClickReleased += ObjUIBtBig_ButtonClickReleased;
             if (_btnSmall != null)
                 _btnSmall.ButtonClickReleased += ObjUIBtSmall_ButtonClickReleased;
             if (_btnNpc != null)
                 _btnNpc.ButtonClickReleased += ObjUIBtNpc_ButtonClickReleased;
-            _btnMap.ButtonClickReleased += ObjUIBtMap_ButtonClickReleased;
+            if (_btnMap != null)
+                _btnMap.ButtonClickReleased += ObjUIBtMap_ButtonClickReleased;
             UpdateButtonLayout();
         }
 
@@ -1021,13 +1027,13 @@ namespace HaCreator.MapSimulator.UI
             SyncFramePositionsFrom(previousFrame);
             if (_useLegacyOptionButtonCycle)
             {
-                _btnMin.SetButtonState(UIObjectState.Normal);
-                _btnMax.SetButtonState(UIObjectState.Normal);
+                _btnMin?.SetButtonState(UIObjectState.Normal);
+                _btnMax?.SetButtonState(UIObjectState.Normal);
             }
             else
             {
-                _btnMin.SetButtonState(_bIsCollapsedState ? UIObjectState.Disabled : UIObjectState.Normal);
-                _btnMax.SetButtonState(_bIsCollapsedState ? UIObjectState.Normal : UIObjectState.Disabled);
+                _btnMin?.SetButtonState(_bIsCollapsedState ? UIObjectState.Disabled : UIObjectState.Normal);
+                _btnMax?.SetButtonState(_bIsCollapsedState ? UIObjectState.Normal : UIObjectState.Disabled);
             }
 
             UpdateButtonLayout();

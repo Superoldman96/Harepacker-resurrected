@@ -12,6 +12,7 @@ using System.Threading;
 using System.Resources;
 using System.Reflection;
 using HaCreator.Wz;
+using HaCreator.Audio;
 using HaSharedLibrary;
 using MapleLib;
 using MapleLib.Img;
@@ -24,6 +25,23 @@ namespace HaCreator
         public static WzFileManager WzManager;
         public static WzInformationManager InfoManager;
         public static IDataSource DataSource;
+        private static IAudioAssetCatalog _audioAssetCatalog;
+        /// <summary>
+        /// Shared metadata-first Sound catalog used by map AI and cutscene
+        /// pickers.  It is recreated automatically when the active data source
+        /// changes during source-version hot swap.
+        /// </summary>
+        public static IAudioAssetCatalog AudioAssetCatalog
+        {
+            get
+            {
+                if (DataSource == null)
+                    return null;
+                if (_audioAssetCatalog == null || !ReferenceEquals(_audioAssetCatalog.DataSource, DataSource))
+                    _audioAssetCatalog = new AudioAssetCatalog(DataSource);
+                return _audioAssetCatalog;
+            }
+        }
         public static StartupManager StartupManager;
         public static bool AbortThreads = false;
         public static bool Restarting;
@@ -197,6 +215,7 @@ namespace HaCreator
 
         #region Settings
         public static WzSettingsManager SettingsManager;
+        public static bool SkipSettingsSave { get; set; }
         public static string GetLocalSettingsFolder()
         {
             string appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -262,8 +281,11 @@ namespace HaCreator
             // Shutdown
             if (initForm.editor != null)
                 initForm.editor.hcsm.backupMan.ClearBackups();
-            SettingsManager.SaveSettings();
-            StartupManager?.SaveConfig();
+            if (!SkipSettingsSave)
+            {
+                SettingsManager.SaveSettings();
+                StartupManager?.SaveConfig();
+            }
             if (Restarting)
             {
                 Application.Restart();

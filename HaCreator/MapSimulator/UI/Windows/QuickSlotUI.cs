@@ -27,8 +27,7 @@ namespace HaCreator.MapSimulator.UI
         #region Constants
         private const int SLOT_SIZE = 32;
         private const int SLOT_PADDING = 2;
-        private const int SLOTS_PER_ROW = 8;
-        private const int VISIBLE_ROWS = 1;  // Primary bar shows 1 row of 8 slots
+        private const int DEFAULT_SLOTS_PER_ROW = 8;
         private const int TOOLTIP_PADDING = 10;
         private const int TOOLTIP_ICON_GAP = 8;
         private const int TOOLTIP_TITLE_GAP = 8;
@@ -48,6 +47,7 @@ namespace HaCreator.MapSimulator.UI
         private SkillLoader _skillLoader;
         private SpriteFont _font;
         private readonly GraphicsDevice _graphicsDevice;
+        private int _slotsPerRow = DEFAULT_SLOTS_PER_ROW;
 
         // Slot rendering
         private Texture2D _emptySlotTexture;
@@ -233,6 +233,12 @@ namespace HaCreator.MapSimulator.UI
             CreateSlotTextures(device);
         }
 
+        public void UseLegacyTwoRowLayout()
+        {
+            _slotsPerRow = 4;
+            _primaryQuickSlotSurfaceDirty = true;
+        }
+
         private void CreateSlotTextures(GraphicsDevice device)
         {
             // Empty slot texture (dark gray with border)
@@ -373,7 +379,7 @@ namespace HaCreator.MapSimulator.UI
 
             int slotCount = SlotCount;
             int slotOffset = SlotOffset;
-            int slotsPerRow = _currentBar == BAR_FUNCTION ? 6 : SLOTS_PER_ROW;
+            int slotsPerRow = _currentBar == BAR_FUNCTION ? 6 : _slotsPerRow;
             int rows = (slotCount + slotsPerRow - 1) / slotsPerRow;
 
             // Calculate content area (offset from window position)
@@ -2018,7 +2024,7 @@ namespace HaCreator.MapSimulator.UI
         {
             int contentX = Position.X + 5;
             int contentY = Position.Y + 5;
-            int slotsPerRow = _currentBar == BAR_FUNCTION ? 6 : SLOTS_PER_ROW;
+            int slotsPerRow = _currentBar == BAR_FUNCTION ? 6 : _slotsPerRow;
 
             int relX = mouseX - contentX;
             int relY = mouseY - contentY;

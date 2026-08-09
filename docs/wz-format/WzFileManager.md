@@ -111,12 +111,15 @@ public const string BIG_BANG_2_MARKER = "BigBang2!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
 public static bool IsBigBangUpdate(WzImage uiWindow2Image)
 public static bool IsBigBang2Update(WzImage uiWindow2Image)
+public static bool IsVUpdate(WzImage statusBar3Image)
+public static bool DetectVUpdateFormat(string mapleStoryPath, WzMapleVersion encryption, bool is64Bit)
 ```
 
 Use these with an already-loaded UIWindow2.img to determine if the client is:
 - **Pre-Big Bang**: No BigBang marker
 - **Post-Big Bang**: Has `BIG_BANG_MARKER` (December 2010)
 - **Post-Chaos/Big Bang 2**: Has `BIG_BANG_2_MARKER` (2011)
+- **V Update UI family**: Has `StatusBar3.img`; this is independent of 32-bit/64-bit client architecture
 
 ---
 

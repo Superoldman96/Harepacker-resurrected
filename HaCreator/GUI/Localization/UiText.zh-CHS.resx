@@ -48,6 +48,9 @@
   <data name="Init_ImgRecommendedHint" xml:space="preserve">
     <value>只需提取一次，即可获得更快的启动速度、可靠的编辑体验，以及 HaCreator 支持最完善的工作流程。</value>
   </data>
+  <data name="Init_ImgGitHint" xml:space="preserve">
+    <value>提示：将提取的 .img 文件保存在 Git 仓库中，可以更轻松地跟踪和比较 WZ 编辑内容。</value>
+  </data>
   <data name="Init_NoVersions" xml:space="preserve">
     <value>未找到任何版本。
 
@@ -620,9 +623,6 @@
   <data name="Editor_HaCreator_resurrected_8AD585" xml:space="preserve">
     <value>HaCreator resurrected</value>
   </data>
-  <data name="Editor_HAM_4FAE66" xml:space="preserve">
-    <value>HAM</value>
-  </data>
   <data name="Editor_Help_B79CAC" xml:space="preserve">
     <value>说明</value>
   </data>
@@ -681,9 +681,6 @@
   <data name="Editor_Map_diagnostics_269074" xml:space="preserve">
     <value>地图诊断</value>
   </data>
-  <data name="Editor_Map_file_1C2EF1" xml:space="preserve">
-    <value>地图文件</value>
-  </data>
   <data name="Editor_Map_Objects_4CD3A1" xml:space="preserve">
     <value>地图对象</value>
   </data>
@@ -696,9 +693,6 @@
   </data>
   <data name="Editor_Map_Simulator_68DDBB" xml:space="preserve">
     <value>地图模拟器</value>
-  </data>
-  <data name="Editor_Map_XML_B46847" xml:space="preserve">
-    <value>地图 XML</value>
   </data>
   <data name="Editor_Maps_119E66" xml:space="preserve">
     <value>地图</value>
@@ -852,15 +846,6 @@
   <data name="Editor_Save_1509F5" xml:space="preserve">
     <value>保存</value>
   </data>
-  <data name="Editor_Save_map_AB74BA" xml:space="preserve">
-    <value>保存地图</value>
-  </data>
-  <data name="Editor_Save_map_Ctrl_S_1E254B" xml:space="preserve">
-    <value>保存地图 (Ctrl+S)</value>
-  </data>
-  <data name="Editor_Save_map_1EA04E" xml:space="preserve">
-    <value>保存地图...</value>
-  </data>
   <data name="Editor_Save_to_WZ_A5F5FB" xml:space="preserve">
     <value>保存至 WZ</value>
   </data>
@@ -969,9 +954,6 @@
     <value>虚拟
 </value>
   </data>
-  <data name="Editor_XML_40658E" xml:space="preserve">
-    <value>XML</value>
-  </data>
   <data name="Editor_Zoom_509C51" xml:space="preserve">
     <value>缩放</value>
   </data>
@@ -1031,18 +1013,6 @@
   <data name="Editor_Loading" xml:space="preserve">
     <value>正在载入...</value>
   </data>
-  <data name="Editor_SelectHamMapTitle" xml:space="preserve">
-    <value>选取要载入的地图...</value>
-  </data>
-  <data name="Editor_HamMapFileFilter" xml:space="preserve">
-    <value>HaCreator 地图文件 (*.ham)|*.ham</value>
-  </data>
-  <data name="Editor_SelectXmlTitle" xml:space="preserve">
-    <value>选取要载入的 XML...</value>
-  </data>
-  <data name="Editor_XmlFileFilter" xml:space="preserve">
-    <value>可延伸标记语言文件 (*.xml)|*.xml</value>
-  </data>
   <data name="Editor_ResolvingMissingMaps" xml:space="preserve">
     <value>正在解析缺少的地图字串...</value>
   </data>
@@ -1075,4 +1045,4 @@
   <data name="Editor_Resolution_0F91A2" xml:space="preserve">
     <value>分辨率</value>
   </data>
-</root>
+<data name="MapImport_CurrentDestination" xml:space="preserve"><value>当前目标</value></data><data name="MapImport_CheckBgm" xml:space="preserve"><value>✓ 引用的 BGM 条目</value></data><data name="MapImport_Tab" xml:space="preserve"><value>导入</value></data><data name="MapImport_IncludedReview" xml:space="preserve"><value>依赖审核内容</value></data><data name="MapImport_CheckConflicts" xml:space="preserve"><value>✓ 现有文件冲突</value></data><data name="MapImport_CardDescription" xml:space="preserve"><value>从其他已提取的 WZ 导出中选择地图。HaCreator 会在写入当前加载的版本前，追踪并审核其引用的资源。</value></data><data name="MapImport_SelectSourceStatus" xml:space="preserve"><value>选择已提取的来源版本并审核其地图依赖。</value></data><data name="MapImport_CardTitle" xml:space="preserve"><value>从其他版本带入地图</value></data><data name="MapImport_CheckVisuals" xml:space="preserve"><value>✓ 图块、对象、背景</value></data><data name="MapImport_ChooseSource" xml:space="preserve"><value>选择来源版本和地图…</value></data><data name="MapImport_CurrentDataSource" xml:space="preserve"><value>当前 HaCreator 数据源</value></data><data name="MapImport_CheckMaps" xml:space="preserve"><value>✓ 地图 IMG 和链接地图</value></data><data name="MapImport_CheckLife" xml:space="preserve"><value>✓ NPC、怪物、反应堆</value></data><data name="MapImport_WritableDestination" xml:space="preserve"><value>跨版本地图导入需要可写的已提取 IMG 目标。</value></data><data name="MapImport_CheckStrings" xml:space="preserve"><value>✓ 地图和生命字符串</value></data></root>

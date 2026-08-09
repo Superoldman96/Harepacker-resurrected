@@ -48,6 +48,9 @@
   <data name="Init_ImgRecommendedHint" xml:space="preserve">
     <value>한 번만 추출하면 더 빠른 시작, 안정적인 편집, HaCreator에서 가장 잘 지원되는 워크플로를 이용할 수 있습니다.</value>
   </data>
+  <data name="Init_ImgGitHint" xml:space="preserve">
+    <value>팁: 추출한 .img 파일을 Git 저장소에서 관리하면 WZ 편집 내용을 더 쉽게 추적하고 비교할 수 있습니다.</value>
+  </data>
   <data name="Init_NoVersions" xml:space="preserve">
     <value>버전을 찾을 수 없습니다.
 
@@ -620,9 +623,6 @@
   <data name="Editor_HaCreator_resurrected_8AD585" xml:space="preserve">
     <value>HaCreator resurrected</value>
   </data>
-  <data name="Editor_HAM_4FAE66" xml:space="preserve">
-    <value>HAM</value>
-  </data>
   <data name="Editor_Help_B79CAC" xml:space="preserve">
     <value>도움말</value>
   </data>
@@ -681,9 +681,6 @@
   <data name="Editor_Map_diagnostics_269074" xml:space="preserve">
     <value>맵 진단</value>
   </data>
-  <data name="Editor_Map_file_1C2EF1" xml:space="preserve">
-    <value>맵 파일</value>
-  </data>
   <data name="Editor_Map_Objects_4CD3A1" xml:space="preserve">
     <value>맵 오브젝트</value>
   </data>
@@ -696,9 +693,6 @@
   </data>
   <data name="Editor_Map_Simulator_68DDBB" xml:space="preserve">
     <value>맵 시뮬레이터</value>
-  </data>
-  <data name="Editor_Map_XML_B46847" xml:space="preserve">
-    <value>맵 XML</value>
   </data>
   <data name="Editor_Maps_119E66" xml:space="preserve">
     <value>맵</value>
@@ -852,15 +846,6 @@
   <data name="Editor_Save_1509F5" xml:space="preserve">
     <value>저장</value>
   </data>
-  <data name="Editor_Save_map_AB74BA" xml:space="preserve">
-    <value>맵 저장</value>
-  </data>
-  <data name="Editor_Save_map_Ctrl_S_1E254B" xml:space="preserve">
-    <value>맵 저장 (Ctrl+S)</value>
-  </data>
-  <data name="Editor_Save_map_1EA04E" xml:space="preserve">
-    <value>맵 저장...</value>
-  </data>
   <data name="Editor_Save_to_WZ_A5F5FB" xml:space="preserve">
     <value>WZ에 저장</value>
   </data>
@@ -969,9 +954,6 @@
     <value>가상
 </value>
   </data>
-  <data name="Editor_XML_40658E" xml:space="preserve">
-    <value>XML</value>
-  </data>
   <data name="Editor_Zoom_509C51" xml:space="preserve">
     <value>확대/축소</value>
   </data>
@@ -1031,18 +1013,6 @@
   <data name="Editor_Loading" xml:space="preserve">
     <value>불러오는 중...</value>
   </data>
-  <data name="Editor_SelectHamMapTitle" xml:space="preserve">
-    <value>불러올 맵 선택...</value>
-  </data>
-  <data name="Editor_HamMapFileFilter" xml:space="preserve">
-    <value>HaCreator 맵 파일 (*.ham)|*.ham</value>
-  </data>
-  <data name="Editor_SelectXmlTitle" xml:space="preserve">
-    <value>불러올 XML 선택...</value>
-  </data>
-  <data name="Editor_XmlFileFilter" xml:space="preserve">
-    <value>확장성 마크업 언어 파일 (*.xml)|*.xml</value>
-  </data>
   <data name="Editor_ResolvingMissingMaps" xml:space="preserve">
     <value>누락된 맵 문자열 해결 중...</value>
   </data>
@@ -1075,4 +1045,4 @@
   <data name="Editor_Resolution_0F91A2" xml:space="preserve">
     <value>해상도</value>
   </data>
-</root>
+<data name="MapImport_CurrentDestination" xml:space="preserve"><value>현재 대상</value></data><data name="MapImport_CheckBgm" xml:space="preserve"><value>✓ 참조된 BGM 항목</value></data><data name="MapImport_Tab" xml:space="preserve"><value>가져오기</value></data><data name="MapImport_IncludedReview" xml:space="preserve"><value>종속성 검토 항목</value></data><data name="MapImport_CheckConflicts" xml:space="preserve"><value>✓ 기존 파일 충돌</value></data><data name="MapImport_CardDescription" xml:space="preserve"><value>다른 추출 WZ 내보내기에서 맵을 선택합니다. HaCreator는 현재 로드된 버전에 쓰기 전에 참조 자산을 추적하고 검토합니다.</value></data><data name="MapImport_SelectSourceStatus" xml:space="preserve"><value>추출된 소스 버전을 선택하고 맵 종속성을 검토합니다.</value></data><data name="MapImport_CardTitle" xml:space="preserve"><value>다른 버전에서 맵 가져오기</value></data><data name="MapImport_CheckVisuals" xml:space="preserve"><value>✓ 타일, 오브젝트, 배경</value></data><data name="MapImport_ChooseSource" xml:space="preserve"><value>소스 버전 및 맵 선택…</value></data><data name="MapImport_CurrentDataSource" xml:space="preserve"><value>현재 HaCreator 데이터 소스</value></data><data name="MapImport_CheckMaps" xml:space="preserve"><value>✓ 맵 IMG 및 연결된 맵</value></data><data name="MapImport_CheckLife" xml:space="preserve"><value>✓ NPC, 몬스터, 리액터</value></data><data name="MapImport_WritableDestination" xml:space="preserve"><value>버전 간 맵 가져오기는 쓰기 가능한 추출 IMG 대상이 필요합니다.</value></data><data name="MapImport_CheckStrings" xml:space="preserve"><value>✓ 맵 및 라이프 문자열</value></data></root>

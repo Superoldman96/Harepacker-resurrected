@@ -110,6 +110,28 @@ Notes:
 - Keep deep quick-slot validation ownership and skill-book recommendation ownership in `MapSimulator-Client-Parity-Backlog-8-Progression-Utility-Windows.md`.
 - Keep this UI/HUD document focused on status-bar, chat, whisper, and directly visible HUD ownership.
 
+## UI generation families
+
+MapSimulator now distinguishes three asset/layout families instead of treating every
+client with `UIWindow2.img` as the same UI generation:
+
+- Legacy pre-Big-Bang reference: `UI/StatusBar.img` owns the fixed 800x71
+  HUD, while inventory, equipment, stats, skills, quests, and minimap chrome live
+  directly under `UI/UIWindow.img`.
+- Big-Bang/Chaos: `UI/StatusBar2.img/mainBar` and nested
+  `UI/UIWindow2.img` branches own the existing simulator UI.
+- V update: `UI/StatusBar3.img`
+  publishes responsive status, EXP, quick-slot, and detached chat surfaces;
+  replacement window owners include `UIInventory.img`, `UIEquip.img`,
+  `UICharacterInfo.img`, `UIMap.img`, and `Quest.img/Helper`.
+
+UI-family selection follows the newest client-owned status-bar image that exists:
+`StatusBar3.img` selects modern, otherwise `StatusBar2.img` selects Big Bang, and
+otherwise `StatusBar.img` selects pre-Big-Bang. This takes precedence over manifest
+version flags because newer exports may retain older owner images for compatibility.
+Dedicated modern window loaders remain tracked per surface while their existing
+Big-Bang-compatible fallbacks stay available.
+
 ## Current State Summary
 
 MapSimulator is no longer "missing player simulation".

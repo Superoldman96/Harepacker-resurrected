@@ -21,7 +21,13 @@ namespace HaCreator.GUI
     /// </summary>
     public partial class HaEditor : Window
     {
+        private void ShowAudioStudio_Click(object sender, RoutedEventArgs e)
+        {
+            var workspace = new Audio.AudioWorkspace { Owner = this };
+            workspace.Show();
+        }
         private InputHandler handler;
+        private WorldMap.WorldMapWorkspace _worldMapWorkspace;
         public HaCreatorStateManager hcsm;
         private bool _isObjectViewerInitialized;
         private bool _isMapExplorerInitialized;
@@ -50,6 +56,10 @@ namespace HaCreator.GUI
             };
 
             Program.HaEditorWindow = this;
+
+            ShowWorldMapEditorWindowClicked += OpenWorldMapEditorWorkspace;
+            mapExplorerBrowser.ShowOnWorldMapRequested += MapBrowser_ShowOnWorldMapRequested;
+            mapExplorerHistoryBrowser.ShowOnWorldMapRequested += MapBrowser_ShowOnWorldMapRequested;
 
             this.Loaded += HaEditor2_Loaded;
             this.Closed += HaEditor2_Closed;
@@ -555,8 +565,8 @@ namespace HaCreator.GUI
 
             mapExplorerBrowser.InitializeMapsListboxItem(true);
             mapExplorerBrowser.SelectionChanged += MapExplorerBrowser_SelectionChanged;
-            mapExplorerHamPathTextBox.Text = ApplicationSettings.LastHamPath ?? string.Empty;
-            mapExplorerXmlPathTextBox.Text = ApplicationSettings.LastXmlPath ?? string.Empty;
+            mapExplorerImportDestinationTextBlock.Text = Program.DataSource?.VersionInfo?.DirectoryPath ??
+                Program.DataSource?.Name ?? LocExtension.Get("MapImport_CurrentDataSource");
             _isMapExplorerInitialized = true;
             InitializeMapExplorerHistory();
             UpdateMapExplorerSelectionState();
@@ -607,6 +617,7 @@ namespace HaCreator.GUI
             if (!_isMapExplorerInitialized)
             {
                 mapExplorerLoadButton.IsEnabled = false;
+                mapExplorerWorldMapButton.IsEnabled = false;
                 mapExplorerCheckMapButton.Visibility = Visibility.Collapsed;
                 mapExplorerCheckMapButton.IsEnabled = false;
                 mapExplorerSelectionTextBlock.Text = string.Empty;
@@ -620,6 +631,7 @@ namespace HaCreator.GUI
                 mapExplorerCheckMapButton.Visibility = Visibility.Collapsed;
                 mapExplorerCheckMapButton.IsEnabled = false;
                 mapExplorerLoadButton.IsEnabled = _isMapExplorerHistoryInitialized && mapExplorerHistoryBrowser.LoadMapEnabled;
+                mapExplorerWorldMapButton.IsEnabled = TryGetSelectedMapId(selectedItem, out _);
                 mapExplorerDeleteHistoryButton.IsEnabled = !string.IsNullOrEmpty(selectedItem);
                 mapExplorerReloadButton.IsEnabled = true;
                 mapExplorerSelectionTextBlock.Text = selectedItem ??
@@ -629,35 +641,26 @@ namespace HaCreator.GUI
                 return;
             }
 
+            if (Equals(mapExplorerSourceTabControl.SelectedItem, mapExplorerImportTabItem))
+            {
+                mapExplorerResolveMissingButton.Visibility = Visibility.Collapsed;
+                mapExplorerCheckMapButton.Visibility = Visibility.Collapsed;
+                mapExplorerCheckMapButton.IsEnabled = false;
+                mapExplorerLoadButton.IsEnabled = false;
+                mapExplorerWorldMapButton.IsEnabled = false;
+                mapExplorerReloadButton.IsEnabled = false;
+                mapExplorerSelectionTextBlock.Text = LocExtension.Get("MapImport_SelectSourceStatus");
+                return;
+            }
+
             mapExplorerDeleteHistoryButton.IsEnabled = false;
-            if (Equals(mapExplorerSourceTabControl.SelectedItem, mapExplorerHamTabItem))
-            {
-                mapExplorerResolveMissingButton.Visibility = Visibility.Collapsed;
-                mapExplorerCheckMapButton.Visibility = Visibility.Collapsed;
-                mapExplorerCheckMapButton.IsEnabled = false;
-                mapExplorerLoadButton.IsEnabled = File.Exists(mapExplorerHamPathTextBox.Text);
-                mapExplorerReloadButton.IsEnabled = false;
-                mapExplorerSelectionTextBlock.Text = mapExplorerHamPathTextBox.Text;
-                return;
-            }
-
-            if (Equals(mapExplorerSourceTabControl.SelectedItem, mapExplorerXmlTabItem))
-            {
-                mapExplorerResolveMissingButton.Visibility = Visibility.Collapsed;
-                mapExplorerCheckMapButton.Visibility = Visibility.Collapsed;
-                mapExplorerCheckMapButton.IsEnabled = false;
-                mapExplorerLoadButton.IsEnabled = File.Exists(mapExplorerXmlPathTextBox.Text);
-                mapExplorerReloadButton.IsEnabled = false;
-                mapExplorerSelectionTextBlock.Text = mapExplorerXmlPathTextBox.Text;
-                return;
-            }
-
             string wzSelectedItem = mapExplorerBrowser.SelectedItem;
             mapExplorerResolveMissingButton.Visibility = Visibility.Visible;
             mapExplorerCheckMapButton.Visibility = Visibility.Visible;
             mapExplorerCheckMapButton.IsEnabled = Program.InfoManager != null &&
                 (Program.DataSource != null || Program.WzManager != null);
             mapExplorerLoadButton.IsEnabled = mapExplorerBrowser.LoadMapEnabled;
+            mapExplorerWorldMapButton.IsEnabled = TryGetSelectedMapId(wzSelectedItem, out _);
             mapExplorerReloadButton.IsEnabled = true;
             mapExplorerSelectionTextBlock.Text = wzSelectedItem ?? string.Empty;
         }
@@ -681,6 +684,81 @@ namespace HaCreator.GUI
             }
 
             UpdateMapExplorerSelectionState();
+        }
+
+        private void OpenWorldMapEditorWorkspace()
+        {
+            OpenWorldMapEditorWorkspace(null);
+        }
+
+        private void OpenWorldMapEditorWorkspace(int? mapId)
+        {
+            if (_worldMapWorkspace != null)
+            {
+                if (_worldMapWorkspace.WindowState == WindowState.Minimized)
+                    _worldMapWorkspace.WindowState = WindowState.Normal;
+                if (mapId.HasValue)
+                    _worldMapWorkspace.SelectMap(mapId.Value);
+                _worldMapWorkspace.Activate();
+                return;
+            }
+
+            _worldMapWorkspace = new WorldMap.WorldMapWorkspace { Owner = this };
+            _worldMapWorkspace.Closed += (_, _) => _worldMapWorkspace = null;
+            if (mapId.HasValue)
+                _worldMapWorkspace.SelectMap(mapId.Value);
+            _worldMapWorkspace.Show();
+        }
+
+        private void MapExplorerWorldMapButton_Click(object sender, RoutedEventArgs e)
+        {
+            string selectedItem = Equals(mapExplorerSourceTabControl.SelectedItem, mapExplorerHistoryTabItem)
+                ? mapExplorerHistoryBrowser.SelectedItem
+                : mapExplorerBrowser.SelectedItem;
+            if (TryGetSelectedMapId(selectedItem, out int mapId))
+                OpenWorldMapEditorWorkspace(mapId);
+        }
+
+        private void MapBrowser_ShowOnWorldMapRequested(string selectedItem)
+        {
+            if (TryGetSelectedMapId(selectedItem, out int mapId))
+                OpenWorldMapEditorWorkspace(mapId);
+        }
+
+        private void EditActiveWorldMapPlacement_Click(object sender, RoutedEventArgs e)
+        {
+            var mapInfo = multiBoard?.SelectedBoard?.MapInfo;
+            if (mapInfo != null)
+                OpenWorldMapEditorWorkspace(mapInfo.id);
+        }
+
+        private static bool TryGetSelectedMapId(string selectedItem, out int mapId)
+        {
+            mapId = 0;
+            if (string.IsNullOrWhiteSpace(selectedItem))
+                return false;
+            string token = selectedItem.Trim().Split(new[] { ' ', '-', ':' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            return int.TryParse(token, out mapId) && mapId > 0;
+        }
+
+        private void MapExplorerImportButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Program.DataSource is not MapleLib.Img.ImgFileSystemDataSource &&
+                (Program.DataSource is not MapleLib.Img.HybridDataSource hybrid || hybrid.ImgSource == null))
+            {
+                MessageBox.Show(LocExtension.Get("MapImport_WritableDestination"),
+                    LocExtension.Get("MapImport_Tab"), MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var window = new MapImportWindow { Owner = this };
+            bool? result = window.ShowDialog();
+            if (result == true)
+            {
+                mapExplorerBrowser.ReloadMapsListboxItem(true);
+                mapExplorerBrowser.ApplySearch(mapExplorerSearchTextBox.Text);
+                UpdateMapExplorerSelectionState();
+            }
         }
 
         private void MapExplorerSearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -810,32 +888,21 @@ namespace HaCreator.GUI
                 string errorMessage = null;
                 bool loaded;
 
-                if (Equals(mapExplorerSourceTabControl.SelectedItem, mapExplorerHamTabItem))
-                {
-                    loaded = hcsm.LoadHamMap(mapExplorerHamPathTextBox.Text, out errorMessage);
-                }
-                else if (Equals(mapExplorerSourceTabControl.SelectedItem, mapExplorerXmlTabItem))
-                {
-                    loaded = hcsm.LoadXmlMap(mapExplorerXmlPathTextBox.Text, out errorMessage);
-                }
-                else
-                {
-                    bool fromHistory = Equals(mapExplorerSourceTabControl.SelectedItem, mapExplorerHistoryTabItem);
-                    string selectedItem = fromHistory
-                        ? mapExplorerHistoryBrowser.SelectedItem
-                        : mapExplorerBrowser.SelectedItem;
+                bool fromHistory = Equals(mapExplorerSourceTabControl.SelectedItem, mapExplorerHistoryTabItem);
+                string selectedItem = fromHistory
+                    ? mapExplorerHistoryBrowser.SelectedItem
+                    : mapExplorerBrowser.SelectedItem;
 
-                    if (string.IsNullOrEmpty(selectedItem))
-                    {
-                        return;
-                    }
+                if (string.IsNullOrEmpty(selectedItem))
+                {
+                    return;
+                }
 
-                    loaded = hcsm.LoadWzMapSelection(selectedItem, out errorMessage);
-                    if (loaded && !fromHistory)
-                    {
-                        InitializeMapExplorerHistory();
-                        mapExplorerHistoryBrowser.AddLoadedMapToHistory(selectedItem);
-                    }
+                loaded = hcsm.LoadWzMapSelection(selectedItem, out errorMessage);
+                if (loaded && !fromHistory)
+                {
+                    InitializeMapExplorerHistory();
+                    mapExplorerHistoryBrowser.AddLoadedMapToHistory(selectedItem);
                 }
 
                 if (!loaded)
@@ -847,58 +914,6 @@ namespace HaCreator.GUI
             {
                 waitWindow.EndWait();
             }
-        }
-
-        private void MapExplorerBrowseHamButton_Click(object sender, RoutedEventArgs e)
-        {
-            using (Forms.OpenFileDialog dialog = new Forms.OpenFileDialog())
-            {
-                dialog.Title = LocExtension.Get("Editor_SelectHamMapTitle");
-                dialog.Filter = LocExtension.Get("Editor_HamMapFileFilter");
-                if (!string.IsNullOrEmpty(mapExplorerHamPathTextBox.Text))
-                {
-                    dialog.FileName = mapExplorerHamPathTextBox.Text;
-                }
-
-                if (dialog.ShowDialog() != Forms.DialogResult.OK)
-                {
-                    return;
-                }
-
-                mapExplorerHamPathTextBox.Text = dialog.FileName;
-            }
-        }
-
-        private void MapExplorerBrowseXmlButton_Click(object sender, RoutedEventArgs e)
-        {
-            using (Forms.OpenFileDialog dialog = new Forms.OpenFileDialog())
-            {
-                dialog.Title = LocExtension.Get("Editor_SelectXmlTitle");
-                dialog.Filter = LocExtension.Get("Editor_XmlFileFilter");
-                if (!string.IsNullOrEmpty(mapExplorerXmlPathTextBox.Text))
-                {
-                    dialog.FileName = mapExplorerXmlPathTextBox.Text;
-                }
-
-                if (dialog.ShowDialog() != Forms.DialogResult.OK)
-                {
-                    return;
-                }
-
-                mapExplorerXmlPathTextBox.Text = dialog.FileName;
-            }
-        }
-
-        private void MapExplorerHamPathTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            ApplicationSettings.LastHamPath = mapExplorerHamPathTextBox.Text;
-            UpdateMapExplorerSelectionState();
-        }
-
-        private void MapExplorerXmlPathTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            ApplicationSettings.LastXmlPath = mapExplorerXmlPathTextBox.Text;
-            UpdateMapExplorerSelectionState();
         }
 
         private void MapExplorerClearHistoryButton_Click(object sender, RoutedEventArgs e)

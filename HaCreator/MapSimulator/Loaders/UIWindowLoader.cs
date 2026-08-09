@@ -2467,7 +2467,7 @@ namespace HaCreator.MapSimulator.Loaders
             QuestDetailWindow questDetail = CreateQuestDetailWindowUnified(uiWindow1Image, uiWindow2Image, basicImage, soundUIImage, device, screenWidth, screenHeight, isBigBang);
             UIWindowBase ability = CreateAbilityWindow(uiWindow1Image, uiWindow2Image, basicImage, soundUIImage, device, screenWidth, screenHeight, isBigBang);
             UserInfoUI characterInfo = CreateCharacterInfoWindow(uiWindow1Image, uiWindow2Image, basicImage, soundUIImage, device, screenWidth, screenHeight, isBigBang);
-            QuickSlotUI quickSlot = CreateQuickSlotWindow(uiWindow2Image, device, screenWidth, screenHeight);
+            QuickSlotUI quickSlot = CreateQuickSlotWindow(uiWindow1Image, uiWindow2Image, device, screenWidth, screenHeight, isBigBang);
 
 
             // Seed the skill window with the requested job path only.
