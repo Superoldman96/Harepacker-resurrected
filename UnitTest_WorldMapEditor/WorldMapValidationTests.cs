@@ -59,4 +59,34 @@ public sealed class WorldMapValidationTests
         Assert.Contains(result.Warnings, diagnostic => diagnostic.Path == "info/parentMap");
         Assert.Contains(result.Warnings, diagnostic => diagnostic.Path == "MapLink/3/link/linkMap");
     }
+
+    [Fact]
+    public void ValidateAll_ReportsReferencesMissingFromActiveMapInventory()
+    {
+        WorldMapDocument document = WorldMapCodec.Read(WorldMapFixtureFactory.CreateSurface());
+        WorldMapValidationResult result = WorldMapValidator.ValidateAll(
+            new[] { document },
+            context: new WorldMapValidationContext
+            {
+                ExistingMapIds = new HashSet<int> { 999 },
+                HasMapInventory = true
+            });
+
+        Assert.Contains(result.Errors, diagnostic => diagnostic.Message.Contains("does not exist in the active map inventory"));
+    }
+
+    [Fact]
+    public void Validate_ReportsDuplicateKeysAndInconsistentFogMetadata()
+    {
+        WorldMapDocument document = WorldMapDocument.CreateNew("Malformed");
+        document.Surface.AddEntry("1");
+        document.Surface.AddEntry("1");
+        WorldMapFogLayer fog = document.Surface.AddFogLayer("0");
+        fog.Quest = 10;
+
+        WorldMapValidationResult result = WorldMapValidator.Validate(document);
+
+        Assert.Contains(result.Errors, diagnostic => diagnostic.Message.Contains("Duplicate marker key"));
+        Assert.Contains(result.Warnings, diagnostic => diagnostic.Message.Contains("quest and qState"));
+    }
 }

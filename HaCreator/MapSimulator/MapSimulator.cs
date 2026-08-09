@@ -997,6 +997,7 @@ namespace HaCreator.MapSimulator
             worldMapWindow.MapRequested += HandleWorldMapRequested;
             worldMapWindow.OnImeCandidateSelected = TrySelectWorldMapImeCandidate;
             worldMapWindow.ResolveImeWindowHandle = () => Window?.Handle ?? IntPtr.Zero;
+            ConfigureNativeWorldMapSurfaces(worldMapWindow);
             worldMapWindow.SetEntries(BuildWorldMapEntries(), _mapBoard?.MapInfo?.id ?? 0, focusedMapId);
             worldMapWindow.SetSearchResults(BuildWorldMapSearchResults(focusedMapId));
             worldMapWindow.SetQuestOverlays(BuildWorldMapQuestOverlays(focusedMapId));
@@ -21495,8 +21496,15 @@ namespace HaCreator.MapSimulator
             }
 
 
+            if (!MonoGameBgmPlayer.TryCreate(bgmProperty, true, 0, 0.5f, out MonoGameBgmPlayer audio))
+            {
+                _currentBgmName = null;
+                _isBgmPausedForFocusLoss = false;
+                return;
+            }
+
             _currentBgmName = bgmName;
-            _audio = new MonoGameBgmPlayer(bgmProperty, true);
+            _audio = audio;
             StartBgmForCurrentFocusState();
             ApplyUtilityAudioSettings();
         }

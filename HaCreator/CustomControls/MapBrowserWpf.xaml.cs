@@ -18,6 +18,7 @@ using System.Windows.Data;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using HaCreator.GUI.WorldMap;
 
 namespace HaCreator.CustomControls
 {
@@ -89,6 +90,25 @@ namespace HaCreator.CustomControls
 
         public delegate void MapSelectChangedDelegate();
         public event MapSelectChangedDelegate SelectionChanged;
+        public event Action<string> ShowOnWorldMapRequested;
+
+        private void MapNamesBox_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(SelectedItem))
+            {
+                e.Handled = true;
+                return;
+            }
+            var menu = new ContextMenu();
+            var show = new MenuItem
+            {
+                Header = WorldMapEditorTextExtension.Get("ShowMapOnWorldMap"),
+                ToolTip = WorldMapEditorTextExtension.Get("ShowMapOnWorldMapHint")
+            };
+            show.Click += (_, _) => ShowOnWorldMapRequested?.Invoke(SelectedItem);
+            menu.Items.Add(show);
+            mapNamesBox.ContextMenu = menu;
+        }
 
         public void ApplySearch(string searchText)
         {

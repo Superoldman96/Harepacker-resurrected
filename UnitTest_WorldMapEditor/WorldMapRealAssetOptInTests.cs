@@ -1,6 +1,8 @@
 using HaCreator.WorldMap;
 using MapleLib.Img;
 using MapleLib.WzLib;
+using System;
+using System.IO;
 
 namespace UnitTest_WorldMapEditor;
 

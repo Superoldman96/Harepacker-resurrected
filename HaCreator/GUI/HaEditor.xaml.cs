@@ -27,6 +27,7 @@ namespace HaCreator.GUI
             workspace.Show();
         }
         private InputHandler handler;
+        private WorldMap.WorldMapWorkspace _worldMapWorkspace;
         public HaCreatorStateManager hcsm;
         private bool _isObjectViewerInitialized;
         private bool _isMapExplorerInitialized;
@@ -55,6 +56,10 @@ namespace HaCreator.GUI
             };
 
             Program.HaEditorWindow = this;
+
+            ShowWorldMapEditorWindowClicked += OpenWorldMapEditorWorkspace;
+            mapExplorerBrowser.ShowOnWorldMapRequested += MapBrowser_ShowOnWorldMapRequested;
+            mapExplorerHistoryBrowser.ShowOnWorldMapRequested += MapBrowser_ShowOnWorldMapRequested;
 
             this.Loaded += HaEditor2_Loaded;
             this.Closed += HaEditor2_Closed;
@@ -612,6 +617,7 @@ namespace HaCreator.GUI
             if (!_isMapExplorerInitialized)
             {
                 mapExplorerLoadButton.IsEnabled = false;
+                mapExplorerWorldMapButton.IsEnabled = false;
                 mapExplorerCheckMapButton.Visibility = Visibility.Collapsed;
                 mapExplorerCheckMapButton.IsEnabled = false;
                 mapExplorerSelectionTextBlock.Text = string.Empty;
@@ -625,6 +631,7 @@ namespace HaCreator.GUI
                 mapExplorerCheckMapButton.Visibility = Visibility.Collapsed;
                 mapExplorerCheckMapButton.IsEnabled = false;
                 mapExplorerLoadButton.IsEnabled = _isMapExplorerHistoryInitialized && mapExplorerHistoryBrowser.LoadMapEnabled;
+                mapExplorerWorldMapButton.IsEnabled = TryGetSelectedMapId(selectedItem, out _);
                 mapExplorerDeleteHistoryButton.IsEnabled = !string.IsNullOrEmpty(selectedItem);
                 mapExplorerReloadButton.IsEnabled = true;
                 mapExplorerSelectionTextBlock.Text = selectedItem ??
@@ -640,6 +647,7 @@ namespace HaCreator.GUI
                 mapExplorerCheckMapButton.Visibility = Visibility.Collapsed;
                 mapExplorerCheckMapButton.IsEnabled = false;
                 mapExplorerLoadButton.IsEnabled = false;
+                mapExplorerWorldMapButton.IsEnabled = false;
                 mapExplorerReloadButton.IsEnabled = false;
                 mapExplorerSelectionTextBlock.Text = LocExtension.Get("MapImport_SelectSourceStatus");
                 return;
@@ -652,6 +660,7 @@ namespace HaCreator.GUI
             mapExplorerCheckMapButton.IsEnabled = Program.InfoManager != null &&
                 (Program.DataSource != null || Program.WzManager != null);
             mapExplorerLoadButton.IsEnabled = mapExplorerBrowser.LoadMapEnabled;
+            mapExplorerWorldMapButton.IsEnabled = TryGetSelectedMapId(wzSelectedItem, out _);
             mapExplorerReloadButton.IsEnabled = true;
             mapExplorerSelectionTextBlock.Text = wzSelectedItem ?? string.Empty;
         }
@@ -675,6 +684,61 @@ namespace HaCreator.GUI
             }
 
             UpdateMapExplorerSelectionState();
+        }
+
+        private void OpenWorldMapEditorWorkspace()
+        {
+            OpenWorldMapEditorWorkspace(null);
+        }
+
+        private void OpenWorldMapEditorWorkspace(int? mapId)
+        {
+            if (_worldMapWorkspace != null)
+            {
+                if (_worldMapWorkspace.WindowState == WindowState.Minimized)
+                    _worldMapWorkspace.WindowState = WindowState.Normal;
+                if (mapId.HasValue)
+                    _worldMapWorkspace.SelectMap(mapId.Value);
+                _worldMapWorkspace.Activate();
+                return;
+            }
+
+            _worldMapWorkspace = new WorldMap.WorldMapWorkspace { Owner = this };
+            _worldMapWorkspace.Closed += (_, _) => _worldMapWorkspace = null;
+            if (mapId.HasValue)
+                _worldMapWorkspace.SelectMap(mapId.Value);
+            _worldMapWorkspace.Show();
+        }
+
+        private void MapExplorerWorldMapButton_Click(object sender, RoutedEventArgs e)
+        {
+            string selectedItem = Equals(mapExplorerSourceTabControl.SelectedItem, mapExplorerHistoryTabItem)
+                ? mapExplorerHistoryBrowser.SelectedItem
+                : mapExplorerBrowser.SelectedItem;
+            if (TryGetSelectedMapId(selectedItem, out int mapId))
+                OpenWorldMapEditorWorkspace(mapId);
+        }
+
+        private void MapBrowser_ShowOnWorldMapRequested(string selectedItem)
+        {
+            if (TryGetSelectedMapId(selectedItem, out int mapId))
+                OpenWorldMapEditorWorkspace(mapId);
+        }
+
+        private void EditActiveWorldMapPlacement_Click(object sender, RoutedEventArgs e)
+        {
+            var mapInfo = multiBoard?.SelectedBoard?.MapInfo;
+            if (mapInfo != null)
+                OpenWorldMapEditorWorkspace(mapInfo.id);
+        }
+
+        private static bool TryGetSelectedMapId(string selectedItem, out int mapId)
+        {
+            mapId = 0;
+            if (string.IsNullOrWhiteSpace(selectedItem))
+                return false;
+            string token = selectedItem.Trim().Split(new[] { ' ', '-', ':' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            return int.TryParse(token, out mapId) && mapId > 0;
         }
 
         private void MapExplorerImportButton_Click(object sender, RoutedEventArgs e)

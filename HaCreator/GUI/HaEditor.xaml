@@ -11,6 +11,7 @@
         xmlns:mapEditor="clr-namespace:HaCreator.MapEditor"
         xmlns:cutscene="clr-namespace:HaCreator.GUI.Cutscene"
         xmlns:audio="clr-namespace:HaCreator.GUI.Audio"
+        xmlns:world="clr-namespace:HaCreator.GUI.WorldMap"
 
         mc:Ignorable="d" 
         d:DesignHeight="721" d:DesignWidth="1111" 
@@ -45,6 +46,7 @@
         <CommandBinding Command="{x:Static local:HaEditor.ShowQuestEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowQuestEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowAnimationEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowCutsceneEditorWindow_Executed"/>
+        <CommandBinding Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowWorldMapEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowMapProperties}" CanExecute="AlwaysExecute" Executed="ShowMapProperties_Executed"/>
     </Window.CommandBindings>
 
@@ -369,6 +371,7 @@
                         <MenuItem Header="{loc:Loc Editor_Preview_324B13}" Command="{x:Static local:HaEditor.MapSim}"/>
                         <MenuItem Header="{loc:Loc Editor_Validate_current_map_3137EC}" Click="ValidateCurrentMap_Click"/>
                         <MenuItem Header="{loc:Loc Editor_Validate_all_maps_7F88A7}" Click="MapExplorerCheckMapButton_Click"/>
+                        <MenuItem Header="{world:WorldMapEditorText EditWorldMapPlacement}" Click="EditActiveWorldMapPlacement_Click"/>
                         <MenuItem Header="{loc:Loc Editor_Finalize_Footholds_68717E}" Command="{x:Static local:HaEditor.Finalize}"/>
                         <MenuItem Header="{loc:Loc Editor_Regenerate_Minimap_CD2C30}" Command="{x:Static local:HaEditor.RegenMinimap}"/>
                         <Separator/>
@@ -378,6 +381,7 @@
                         <MenuItem Header="{loc:Loc Editor_Animation_editor_6F43C2}" Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}"/>
                         <MenuItem Header="{cutscene:CutsceneEditorText Cutscene_Title}" Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}"/>
                         <MenuItem Header="{audio:AudioWorkspaceText Title}" Click="ShowAudioStudio_Click"/>
+                        <MenuItem Header="{world:WorldMapEditorText Title}" Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}"/>
                     </MenuItem>
                     <MenuItem Header="{loc:Loc Editor_Tools_EA93D6}">
                         <MenuItem Header="{loc:Loc Editor_Settings_74A883}" Command="{x:Static local:HaEditor.Settings}"/>
@@ -388,6 +392,7 @@
                         <MenuItem Header="{loc:Loc Editor_Quest_editor_B81784}" Command="{x:Static local:HaEditor.ShowQuestEditorWindow}"/>
                         <MenuItem Header="{loc:Loc Editor_Animation_editor_6F43C2}" Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}"/>
                         <MenuItem Header="{cutscene:CutsceneEditorText Cutscene_Title}" Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}"/>
+                        <MenuItem Header="{world:WorldMapEditorText Title}" Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}"/>
                     </MenuItem>
                     <MenuItem Header="{loc:Loc Editor_Help_B79CAC}">
                         <MenuItem Header="{loc:Loc Editor_Help_B79CAC}" Command="{x:Static local:HaEditor.Help}"/>
@@ -479,6 +484,16 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE8D6;"/>
                             <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{audio:AudioWorkspaceText Title}"/>
+                        </Grid>
+                    </Button>
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
+                            Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}"
+                            ToolTip="{world:WorldMapEditorText Title}"
+                            AutomationProperties.Name="{world:WorldMapEditorText Title}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE707;"/>
+                            <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{world:WorldMapEditorText Title}"/>
                         </Grid>
                     </Button>
                     <Button Style="{StaticResource CommandButtonStyle}" Click="ShowMapBrowser_Click" ToolTip="{loc:Loc Editor_Search_maps_and_commands_FF74F6}">
@@ -865,16 +880,25 @@
                                            Margin="0,3,8,0"
                                            Style="{StaticResource MapExplorerSelectionText}"
                                            ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
-                                <Button x:Name="mapExplorerLoadButton"
-                                        Grid.Row="1"
-                                        Grid.Column="2"
-                                        Width="82"
-                                        VerticalAlignment="Center"
-                                        Style="{StaticResource MapExplorerPrimaryButton}"
-                                        Click="MapExplorerLoadButton_Click"
-                                        Content="{loc:Loc Editor_Open_ED077F}"
-                                        ToolTip="{loc:Loc Editor_Load_selected_map_or_file_1920CB}"
-                                        IsEnabled="False"/>
+                                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal">
+                                    <Button x:Name="mapExplorerWorldMapButton"
+                                            Width="124"
+                                            Margin="0,0,8,0"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource MapExplorerButton}"
+                                            Click="MapExplorerWorldMapButton_Click"
+                                            Content="{world:WorldMapEditorText ShowMapOnWorldMap}"
+                                            ToolTip="{world:WorldMapEditorText ShowMapOnWorldMapHint}"
+                                            IsEnabled="False"/>
+                                    <Button x:Name="mapExplorerLoadButton"
+                                            Width="82"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource MapExplorerPrimaryButton}"
+                                            Click="MapExplorerLoadButton_Click"
+                                            Content="{loc:Loc Editor_Open_ED077F}"
+                                            ToolTip="{loc:Loc Editor_Load_selected_map_or_file_1920CB}"
+                                            IsEnabled="False"/>
+                                </StackPanel>
                             </Grid>
                         </Border>
 
