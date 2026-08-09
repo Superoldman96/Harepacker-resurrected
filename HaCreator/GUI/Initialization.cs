@@ -578,16 +578,8 @@ namespace HaCreator.GUI
 
             UpdateImgButtonStates();
 
-            // Keep an explicitly selected legacy mode, but guide new IMG-mode users through
-            // extraction even when they do not have a version yet.
-            if (config.DataSourceMode == DataSourceMode.ImgFileSystem)
-            {
-                tabControl_dataSource.SelectedItem = tabPage_imgVersions;
-            }
-            else
-            {
-                tabControl_dataSource.SelectedItem = tabPage_wzFiles;
-            }
+            // Default to the IMG Versions workflow.
+            tabControl_dataSource.SelectedItem = tabPage_imgVersions;
         }
 
         /// <summary>
