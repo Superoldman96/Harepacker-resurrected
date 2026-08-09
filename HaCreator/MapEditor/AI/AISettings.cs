@@ -15,7 +15,7 @@ namespace HaCreator.MapEditor.AI
     public static class AISettings
     {
         private const string DefaultBaseUrl = "https://openrouter.ai/api/v1";
-        private const string DefaultModel = "google/gemini-3-flash-preview";
+        private const string DefaultModel = "openai/gpt-5.6-luna:xhigh";
         private const string DefaultImageModel = "gpt-image-2";
         private const AIEndpointProtocol DefaultProtocol = AIEndpointProtocol.ChatCompletions;
 
@@ -25,6 +25,8 @@ namespace HaCreator.MapEditor.AI
         private static string imageModel = DefaultImageModel;
         private static AIEndpointProtocol protocol = DefaultProtocol;
         private static string reasoningEffort = string.Empty;
+        private static readonly System.Collections.Generic.Dictionary<string, string> reasoningEffortsByModel =
+            new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private static bool strictSchemas;
         private static bool autoApplyCommands = true;
         private static int maxToolTurns = 40;
@@ -111,6 +113,27 @@ namespace HaCreator.MapEditor.AI
             }
         }
 
+        public static string GetReasoningEffortForModel(string modelId)
+        {
+            EnsureLoaded();
+            if (!string.IsNullOrWhiteSpace(modelId) && reasoningEffortsByModel.TryGetValue(modelId.Trim(), out var value))
+                return value;
+            return string.Equals(modelId, model, StringComparison.OrdinalIgnoreCase) ? reasoningEffort : string.Empty;
+        }
+
+        public static void SetReasoningEffortForModel(string modelId, string value)
+        {
+            EnsureLoaded();
+            var normalized = (value ?? string.Empty).Trim().ToLowerInvariant();
+            if (!AvailableReasoningEfforts.Contains(normalized))
+                normalized = string.Empty;
+            if (!string.IsNullOrWhiteSpace(modelId))
+                reasoningEffortsByModel[modelId.Trim()] = normalized;
+            if (string.Equals(modelId, model, StringComparison.OrdinalIgnoreCase))
+                reasoningEffort = normalized;
+            Save();
+        }
+
         public static bool StrictSchemas
         {
             get { EnsureLoaded(); return strictSchemas; }
@@ -142,12 +165,19 @@ namespace HaCreator.MapEditor.AI
         public static readonly string[] AvailableModels =
         {
             DefaultModel,
-            "google/gemini-3.1-flash-lite-preview",
-            "google/gemini-3.1-pro-preview",
-            "openai/gpt-5.4",
-            "openai/gpt-5.3-codex",
-            "anthropic/claude-sonnet-4.5",
-            "anthropic/claude-opus-4.5"
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-terra",
+            "openai/gpt-5.6-luna",
+            "anthropic/claude-opus-5",
+            "anthropic/claude-opus-4.8",
+            "anthropic/claude-sonnet-5",
+            "meta/muse-spark-1.2",
+            "x-ai/grok-4.5",
+            "z-ai/glm-5.2",
+            "~deepseek/deepseek-v4-flash-latest",
+            "deepseek/deepseek-v4-pro",
+            "google/gemini-3.6-flash",
+            "moonshotai/kimi-k3",
         };
 
         public static readonly string[] AvailableImageModels =
@@ -158,7 +188,7 @@ namespace HaCreator.MapEditor.AI
 
         public static readonly string[] AvailableReasoningEfforts =
         {
-            "low", "medium", "high", "xhigh"
+            "minimal", "low", "medium", "high", "xhigh"
         };
 
         public static OpenAICompatibleOptions CreateOptions()
@@ -362,6 +392,15 @@ namespace HaCreator.MapEditor.AI
                     protocol = parsedProtocol;
 
                 reasoningEffort = settings["reasoningEffort"]?.ToString() ?? string.Empty;
+                if (settings["reasoningEffortsByModel"] is JObject perModel)
+                {
+                    foreach (var property in perModel.Properties())
+                    {
+                        var value = property.Value?.ToString()?.Trim().ToLowerInvariant();
+                        if (AvailableReasoningEfforts.Contains(value))
+                            reasoningEffortsByModel[property.Name] = value;
+                    }
+                }
                 strictSchemas = settings["strictSchemas"]?.Value<bool>() ?? false;
                 autoApplyCommands = settings["autoApplyCommands"]?.Value<bool>() ?? true;
                 maxToolTurns = Clamp(settings["maxToolTurns"]?.Value<int>() ?? 40, 1, 200);
@@ -389,6 +428,7 @@ namespace HaCreator.MapEditor.AI
                     ["imageModel"] = imageModel,
                     ["protocol"] = protocol.ToString(),
                     ["reasoningEffort"] = reasoningEffort,
+                    ["reasoningEffortsByModel"] = JObject.FromObject(reasoningEffortsByModel),
                     ["strictSchemas"] = strictSchemas,
                     ["autoApplyCommands"] = autoApplyCommands,
                     ["maxToolTurns"] = maxToolTurns,

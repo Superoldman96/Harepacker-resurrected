@@ -21,6 +21,7 @@
                 <Border Style="{StaticResource HareCardStyle}">
                     <StackPanel>
                         <TextBlock Text="Endpoint" Style="{StaticResource HareSectionTitleStyle}"/>
+                        <TextBlock Text="The endpoint is usually an OpenRouter or local OpenAI-compatible server." Margin="0,4,0,0" TextWrapping="Wrap" Style="{StaticResource HareMutedTextStyle}"/>
                         <TextBlock Text="Base URL" Margin="0,12,0,4"/>
                         <TextBox x:Name="txtBaseUrl" TextChanged="OnSettingsChanged" LostKeyboardFocus="TxtBaseUrl_Leave"
                                  AutomationProperties.Name="Base URL"/>
@@ -46,7 +47,7 @@
                                    Margin="0,6,0,0" TextWrapping="Wrap" Style="{StaticResource HareMutedTextStyle}"/>
                         <TextBlock x:Name="lblModelsStatus" Margin="0,6,0,0" TextWrapping="Wrap" Style="{StaticResource HareMutedTextStyle}"
                                    AutomationProperties.LiveSetting="Polite"/>
-                        <TextBlock Text="Image model" Margin="0,12,0,4"/>
+                        <TextBlock Text="Image model" Margin="0,16,0,4"/>
                         <ComboBox x:Name="cboImageModel" IsEditable="True" IsTextSearchEnabled="False"
                                   SelectionChanged="CboImageModel_SelectionChanged"
                                   AutomationProperties.Name="Image model"
@@ -79,10 +80,23 @@
                 <Border Margin="0,12,0,0" Style="{StaticResource HareCardStyle}">
                     <StackPanel>
                         <TextBlock Text="Map editing behavior" Style="{StaticResource HareSectionTitleStyle}"/>
+                        <TextBlock Text="Use Auto to let the selected model choose its own thinking level." Margin="0,4,0,0" TextWrapping="Wrap" Style="{StaticResource HareMutedTextStyle}"/>
                         <CheckBox x:Name="chkStrictSchemas" Margin="0,10,0,0" Checked="OnSettingsChanged" Unchecked="OnSettingsChanged"
                                   Content="Use strict tool schemas"/>
                         <CheckBox x:Name="chkAutoApply" Margin="0,7,0,0" Checked="OnSettingsChanged" Unchecked="OnSettingsChanged"
                                   Content="Apply generated map edits automatically"/>
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Maximum tool turns"/>
+                                <TextBox x:Name="txtMaxToolTurns" Margin="0,4,0,0" InputScope="Number" TextChanged="OnSettingsChanged" AutomationProperties.Name="Maximum tool turns"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Maximum output tokens"/>
+                                <TextBox x:Name="txtMaxOutputTokens" Margin="0,4,0,0" InputScope="Number" TextChanged="OnSettingsChanged" AutomationProperties.Name="Maximum output tokens"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="Higher limits may increase cost or latency." Margin="0,6,0,0" TextWrapping="Wrap" Style="{StaticResource HareMutedTextStyle}"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

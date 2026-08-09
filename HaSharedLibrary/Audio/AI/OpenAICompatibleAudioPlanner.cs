@@ -20,7 +20,7 @@ public sealed class OpenAICompatibleAudioPlanner : IDisposable
         this.endpoint = endpoint.TrimEnd('/'); client = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(30) }; ownsClient = httpClient is null;
         if (!string.IsNullOrWhiteSpace(apiKey)) client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
     }
-    public async Task<AudioAiBrief> PlanAsync(string request, string model = "openai/gpt-4o-mini", CancellationToken cancellationToken = default)
+    public async Task<AudioAiBrief> PlanAsync(string request, string model = "openai/gpt-5.6-luna:xhigh", CancellationToken cancellationToken = default)
     {
         var payload = new { model, temperature = 0.2, messages = new[] { new { role = "system", content = "Return JSON only with prompt, negativePrompt, instrumental, durationSeconds, tempo, keyScale, timeSignature, loopIntent, genres, moods, instruments." }, new { role = "user", content = request } } };
         using var response = await client.PostAsJsonAsync(endpoint + "/chat/completions", payload, cancellationToken).ConfigureAwait(false); response.EnsureSuccessStatusCode();

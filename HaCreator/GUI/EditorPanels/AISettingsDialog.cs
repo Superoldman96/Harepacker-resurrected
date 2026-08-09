@@ -20,6 +20,8 @@ namespace HaCreator.GUI.EditorPanels
             EditorPanelLocalizer.Text("AISettings_AutoReasoningEffort", "Auto (model default)");
 
         private readonly List<OpenAIModelInfo> _endpointModels = new List<OpenAIModelInfo>();
+        private readonly Dictionary<string, string> _reasoningByModel = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private string _lastModelId;
         private bool _connectionTested;
         private bool _endpointModelsLoaded;
         private bool _initializing;
@@ -66,9 +68,13 @@ namespace HaCreator.GUI.EditorPanels
                 cboApiDialect.SelectedIndex = AISettings.Protocol == AIEndpointProtocol.Responses ? 1 : 0;
                 chkStrictSchemas.IsChecked = AISettings.StrictSchemas;
                 chkAutoApply.IsChecked = AISettings.AutoApplyCommands;
+                txtMaxToolTurns.Text = AISettings.MaxToolTurns.ToString();
+                txtMaxOutputTokens.Text = AISettings.MaxOutputTokens.ToString();
 
                 RebuildModelCatalog(Array.Empty<OpenAIModelInfo>());
-                UpdateReasoningEffortChoices(FindModelChoice(AISettings.Model), AISettings.ReasoningEffort);
+                _lastModelId = AISettings.Model;
+                _reasoningByModel[_lastModelId] = AISettings.GetReasoningEffortForModel(_lastModelId);
+                UpdateReasoningEffortChoices(FindModelChoice(AISettings.Model), _reasoningByModel[_lastModelId]);
                 UpdateStatusFromSettings();
             }
             finally
@@ -107,12 +113,14 @@ namespace HaCreator.GUI.EditorPanels
             if (_updatingModelCatalog)
                 return;
 
-            if (cboModel.SelectedItem is ModelChoice choice)
+            ModelChoice selectedChoice = cboModel.SelectedItem as ModelChoice;
+            if (selectedChoice != null)
             {
+                RememberSelectedReasoning();
                 _updatingModelCatalog = true;
                 try
                 {
-                    cboModel.Text = choice.ModelId;
+                    cboModel.Text = selectedChoice.ModelId;
                 }
                 finally
                 {
@@ -120,7 +128,11 @@ namespace HaCreator.GUI.EditorPanels
                 }
             }
 
-            UpdateReasoningEffortChoices(FindModelChoice(cboModel.Text));
+            var modelId = selectedChoice?.ModelId ?? cboModel.Text.Trim();
+            _lastModelId = modelId;
+            if (!_reasoningByModel.TryGetValue(modelId, out var remembered))
+                remembered = AISettings.GetReasoningEffortForModel(modelId);
+            UpdateReasoningEffortChoices(selectedChoice ?? FindModelChoice(modelId), remembered);
             InvalidateConnectionTest();
         }
 
@@ -129,7 +141,21 @@ namespace HaCreator.GUI.EditorPanels
             if (_initializing || _updatingModelCatalog)
                 return;
 
-            UpdateReasoningEffortChoices(FindModelChoice(cboModel.Text));
+            var selectedChoice = cboModel.SelectedItem as ModelChoice;
+            var enteredText = cboModel.Text.Trim();
+            var modelId = selectedChoice != null &&
+                (string.Equals(enteredText, selectedChoice.ModelId, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(enteredText, selectedChoice.ToString(), StringComparison.OrdinalIgnoreCase))
+                    ? selectedChoice.ModelId
+                    : enteredText;
+            _lastModelId = modelId;
+            if (!_reasoningByModel.TryGetValue(modelId, out var remembered))
+                remembered = AISettings.GetReasoningEffortForModel(modelId);
+            UpdateReasoningEffortChoices(
+                string.Equals(modelId, selectedChoice?.ModelId, StringComparison.OrdinalIgnoreCase)
+                    ? selectedChoice
+                    : FindModelChoice(modelId),
+                remembered);
             InvalidateConnectionTest();
         }
 
@@ -327,9 +353,12 @@ namespace HaCreator.GUI.EditorPanels
                 return;
 
             var selectedReasoning = preferredReasoning ?? GetSelectedReasoningEffort();
-            var efforts = choice != null && choice.ReasoningEfforts.Count > 0
+            var detectedEfforts = choice != null && choice.ReasoningEfforts.Count > 0
                 ? choice.ReasoningEfforts
                 : InferReasoningEfforts(choice?.ModelId);
+            var efforts = AISettings.AvailableReasoningEfforts
+                .Where(effort => detectedEfforts.Contains(effort, StringComparer.OrdinalIgnoreCase))
+                .ToList();
 
             _updatingReasoningEffort = true;
             try
@@ -348,6 +377,7 @@ namespace HaCreator.GUI.EditorPanels
             {
                 _updatingReasoningEffort = false;
             }
+            cboReasoningEffort.IsEnabled = efforts.Count > 0;
 
             if (choice != null && choice.ReasoningEfforts.Count > 0)
             {
@@ -373,14 +403,29 @@ namespace HaCreator.GUI.EditorPanels
                 normalized.StartsWith("o1", StringComparison.Ordinal) ||
                 normalized.StartsWith("o3", StringComparison.Ordinal) ||
                 normalized.StartsWith("o4", StringComparison.Ordinal) ||
-                normalized.Contains("codex");
+                normalized.Contains("codex") ||
+                normalized.Contains("claude-opus-5") ||
+                normalized.Contains("claude-opus-4.8") ||
+                normalized.Contains("claude-sonnet-5") ||
+                normalized.Contains("grok-4.5") ||
+                normalized.Contains("glm-5.2") ||
+                normalized.Contains("deepseek-v4") ||
+                normalized.Contains("gemini-3.6-flash") ||
+                normalized.Contains("muse-spark-1.2") ||
+                normalized.Contains("kimi-k3");
             if (!supportsReasoning)
                 return Array.Empty<string>();
 
-            var efforts = new List<string> { "low", "medium", "high" };
-            if (normalized.Contains("codex"))
-                efforts.Add("xhigh");
+            var efforts = new List<string> { "minimal", "low", "medium", "high" };
+            efforts.Add("xhigh");
             return efforts;
+        }
+
+        private void RememberSelectedReasoning()
+        {
+            if (string.IsNullOrWhiteSpace(_lastModelId) || _updatingReasoningEffort)
+                return;
+            _reasoningByModel[_lastModelId] = GetSelectedReasoningEffort();
         }
 
         private void OnSettingsChanged(object sender, RoutedEventArgs e)
@@ -388,6 +433,8 @@ namespace HaCreator.GUI.EditorPanels
             if (_initializing || _updatingReasoningEffort || _updatingModelCatalog)
                 return;
 
+            if (ReferenceEquals(sender, cboReasoningEffort))
+                RememberSelectedReasoning();
             InvalidateConnectionTest();
         }
 
@@ -422,7 +469,7 @@ namespace HaCreator.GUI.EditorPanels
             try
             {
                 var baseUrl = txtBaseUrl.Text.Trim();
-                var model = cboModel.Text.Trim();
+                var model = GetSelectedModelId();
                 if (string.IsNullOrWhiteSpace(baseUrl))
                 {
                     lblStatus.Text = EditorPanelLocalizer.Text("AISettings_BaseUrlRequired", "Please enter an API base URL first.");
@@ -433,6 +480,14 @@ namespace HaCreator.GUI.EditorPanels
                 if (string.IsNullOrWhiteSpace(model))
                 {
                     lblStatus.Text = EditorPanelLocalizer.Text("AISettings_ModelRequired", "Please select or enter a model first.");
+                    lblStatus.Foreground = Brushes.Red;
+                    return;
+                }
+
+                if (!int.TryParse(txtMaxToolTurns.Text, out var maxToolTurns) || maxToolTurns < 1 || maxToolTurns > 200 ||
+                    !int.TryParse(txtMaxOutputTokens.Text, out var maxOutputTokens) || maxOutputTokens < 256 || maxOutputTokens > 1000000)
+                {
+                    lblStatus.Text = EditorPanelLocalizer.Text("AISettings_InvalidLimits", "Enter valid limits: 1–200 tool turns and 256–1,000,000 output tokens.");
                     lblStatus.Foreground = Brushes.Red;
                     return;
                 }
@@ -462,7 +517,9 @@ namespace HaCreator.GUI.EditorPanels
                 }
                 else
                 {
-                    lblStatus.Text = EditorPanelLocalizer.Text("AISettings_ConnectionFailed", "Connection failed. Check the endpoint, model, and API key.");
+                    lblStatus.Text = string.IsNullOrWhiteSpace(client.LastTestError)
+                        ? EditorPanelLocalizer.Text("AISettings_ConnectionFailed", "Connection failed. Check the endpoint, model, and API key.")
+                        : EditorPanelLocalizer.Format("AISettings_ConnectionFailedDetail", client.LastTestError);
                     lblStatus.Foreground = Brushes.Red;
                     _connectionTested = false;
                     btnSave.IsEnabled = false;
@@ -496,6 +553,13 @@ namespace HaCreator.GUI.EditorPanels
                 : selected ?? string.Empty;
         }
 
+        private string GetSelectedModelId()
+        {
+            return cboModel.SelectedItem is ModelChoice choice
+                ? choice.ModelId
+                : cboModel.Text.Trim();
+        }
+
         private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
             if (!_connectionTested)
@@ -503,12 +567,17 @@ namespace HaCreator.GUI.EditorPanels
 
             AISettings.BaseUrl = txtBaseUrl.Text.Trim();
             AISettings.ApiKey = txtApiKey.Password.Trim();
-            AISettings.Model = cboModel.Text.Trim();
+            AISettings.Model = GetSelectedModelId();
             AISettings.ImageModel = cboImageModel.Text.Trim();
             AISettings.Protocol = GetSelectedProtocol();
             AISettings.ReasoningEffort = GetSelectedReasoningEffort();
+            AISettings.SetReasoningEffortForModel(AISettings.Model, GetSelectedReasoningEffort());
             AISettings.StrictSchemas = chkStrictSchemas.IsChecked == true;
             AISettings.AutoApplyCommands = chkAutoApply.IsChecked == true;
+            if (int.TryParse(txtMaxToolTurns.Text, out var maxToolTurns))
+                AISettings.MaxToolTurns = maxToolTurns;
+            if (int.TryParse(txtMaxOutputTokens.Text, out var maxOutputTokens))
+                AISettings.MaxOutputTokens = maxOutputTokens;
 
             DialogResult = true;
         }

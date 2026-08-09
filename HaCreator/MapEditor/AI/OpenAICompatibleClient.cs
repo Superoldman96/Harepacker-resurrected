@@ -59,6 +59,8 @@ namespace HaCreator.MapEditor.AI
         private readonly MapMcpToolServer toolServer;
         private readonly bool ownsToolServer;
 
+        public string LastTestError { get; private set; } = string.Empty;
+
         public OpenAICompatibleClient(OpenAICompatibleOptions options, MapMcpToolServer toolServer = null)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
@@ -86,6 +88,7 @@ namespace HaCreator.MapEditor.AI
         {
             try
             {
+                LastTestError = string.Empty;
                 ValidateConfiguration();
                 JObject body;
                 if (options.Protocol == AIEndpointProtocol.Responses)
@@ -112,11 +115,27 @@ namespace HaCreator.MapEditor.AI
 
                 using (var response = await SendAsync(body, CancellationToken.None).ConfigureAwait(false))
                 {
-                    return response.IsSuccessStatusCode;
+                    if (response.IsSuccessStatusCode)
+                        return true;
+
+                    LastTestError = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+                    var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    try
+                    {
+                        var message = JObject.Parse(content)["error"]?["message"]?.ToString();
+                        if (!string.IsNullOrWhiteSpace(message))
+                            LastTestError += $": {message}";
+                    }
+                    catch (JsonException)
+                    {
+                        // The status line still gives a useful and safe diagnostic.
+                    }
+                    return false;
                 }
             }
             catch (Exception ex)
             {
+                LastTestError = ex.Message;
                 Debug.WriteLine($"[OpenAICompatibleClient] Connection test failed: {ex.Message}");
                 return false;
             }
@@ -497,7 +516,7 @@ namespace HaCreator.MapEditor.AI
         {
             var request = new HttpRequestMessage(HttpMethod.Post, BuildEndpointUrl());
             if (!string.IsNullOrWhiteSpace(options.ApiKey))
-                request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {options.ApiKey}");
+                request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {GetEffectiveApiKey()}");
 
             request.Content = new StringContent(
                 body.ToString(Formatting.None),
@@ -516,7 +535,7 @@ namespace HaCreator.MapEditor.AI
             using (var request = new HttpRequestMessage(HttpMethod.Get, url))
             {
                 if (!string.IsNullOrWhiteSpace(options.ApiKey))
-                    request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {options.ApiKey}");
+                    request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {GetEffectiveApiKey()}");
 
                 using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                 {
@@ -540,6 +559,25 @@ namespace HaCreator.MapEditor.AI
             }
 
             return $"{baseUrl}/{endpointName}";
+        }
+
+        private string GetEffectiveApiKey()
+        {
+            var key = (options.ApiKey ?? string.Empty).Trim();
+            if (!IsOpenRouterEndpoint() || key.StartsWith("sk-or-v1-", StringComparison.OrdinalIgnoreCase))
+                return key;
+
+            // OpenRouter keys are sometimes copied without their stable public prefix.
+            // Accept that form in the UI while keeping custom endpoints untouched.
+            return $"sk-or-v1-{key}";
+        }
+
+        private bool IsOpenRouterEndpoint()
+        {
+            if (!Uri.TryCreate((options.BaseUrl ?? string.Empty).Trim(), UriKind.Absolute, out var uri))
+                return false;
+            return string.Equals(uri.Host, "openrouter.ai", StringComparison.OrdinalIgnoreCase) ||
+                   uri.Host.EndsWith(".openrouter.ai", StringComparison.OrdinalIgnoreCase);
         }
 
         private string BuildModelsEndpointUrl()
