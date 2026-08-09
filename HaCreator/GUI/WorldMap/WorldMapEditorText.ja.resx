@@ -10,4 +10,7 @@
   <data name="UnknownMap"><value>&#x4E0D;&#x660E;&#x306A;&#x30DE;&#x30C3;&#x30D7;</value></data>
   <data name="AISettings"><value>AI 設定</value></data>
   <data name="AISettingsHint"><value>AI エンドポイント、モデル、API キーを設定します。</value></data>
+  <data name="PlaceMarkerHint"><value>マーカーを追加: キャンバス上の目的の位置をクリックします。Escape キーまたは右クリックでキャンセルします。</value></data>
+  <data name="MarkerPlacementCancelled"><value>マーカーの配置をキャンセルしました。</value></data>
+  <data name="MarkerPlaced"><value>X {0}、Y {1} にマーカーを追加しました。</value></data>
 </root>

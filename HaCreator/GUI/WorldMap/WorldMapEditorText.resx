@@ -19,6 +19,9 @@
   <data name="AISettings"><value>AI settings</value></data>
   <data name="AISettingsHint"><value>Configure the AI endpoint, models, and API key.</value></data>
   <data name="AddMarker"><value>Add marker</value></data>
+  <data name="PlaceMarkerHint"><value>Add marker: click the desired position on the canvas. Press Escape or right-click to cancel.</value></data>
+  <data name="MarkerPlacementCancelled"><value>Marker placement cancelled.</value></data>
+  <data name="MarkerPlaced"><value>Marker added at X {0}, Y {1}.</value></data>
   <data name="AddLink"><value>Add child / link</value></data>
   <data name="ReplaceBackground"><value>Replace background</value></data>
   <data name="ReviewChanges"><value>Review changes</value></data>

@@ -6,7 +6,8 @@
         Width="1600" Height="980" MinWidth="1280" MinHeight="720"
         WindowStartupLocation="CenterOwner"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
-        SizeChanged="Workspace_SizeChanged">
+        SizeChanged="Workspace_SizeChanged"
+        PreviewKeyDown="Workspace_PreviewKeyDown">
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static world:WorldMapWorkspace.NewSurfaceCommand}" CanExecute="AlwaysCanExecute" Executed="NewSurface_Executed"/>
         <CommandBinding Command="{x:Static world:WorldMapWorkspace.DuplicateSurfaceCommand}" CanExecute="AlwaysCanExecute" Executed="DuplicateSurface_Executed"/>
@@ -76,6 +77,34 @@
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{StaticResource HareAccentSoftBrush}"/></Trigger>
                                 <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{StaticResource HareAccentSoftBrush}"/></Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="CanvasToolToggleStyle" TargetType="ToggleButton">
+                <Setter Property="Width" Value="38"/>
+                <Setter Property="Height" Value="38"/>
+                <Setter Property="Foreground" Value="{StaticResource HareTextBrush}"/>
+                <Setter Property="Background" Value="{StaticResource HareSurfaceBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource HareBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{StaticResource HareAccentSoftBrush}"/></Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="{StaticResource HareAccentSoftBrush}"/>
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource HareAccentBrush}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource HareAccentBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+                                <DataTrigger Binding="{Binding SelectedSurface}" Value="{x:Null}"><Setter Property="IsEnabled" Value="False"/></DataTrigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
@@ -206,12 +235,23 @@
                     <Border Grid.Row="1" Background="{StaticResource HareSurfaceAltBrush}" BorderBrush="{StaticResource HareBorderBrush}" BorderThickness="1" CornerRadius="7" ClipToBounds="True">
                         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Focusable="False">
                             <Grid>
-                                <Canvas x:Name="worldCanvas" Width="{Binding SelectedSurface.BaseWidth, TargetNullValue=640}" Height="{Binding SelectedSurface.BaseHeight, TargetNullValue=470}" Background="{StaticResource CanvasGridBrush}" Focusable="True" MouseLeftButtonDown="Canvas_MouseLeftButtonDown" RenderTransformOrigin="0.5,0.5">
+                                <Canvas x:Name="worldCanvas" Width="{Binding SelectedSurface.BaseWidth, TargetNullValue=640}" Height="{Binding SelectedSurface.BaseHeight, TargetNullValue=470}" Background="{StaticResource CanvasGridBrush}" Focusable="True" MouseLeftButtonDown="Canvas_MouseLeftButtonDown" MouseRightButtonDown="Canvas_MouseRightButtonDown" RenderTransformOrigin="0.5,0.5">
                                     <Canvas.RenderTransform><ScaleTransform ScaleX="{Binding Zoom}" ScaleY="{Binding Zoom}"/></Canvas.RenderTransform>
                                     <Image x:Name="baseImage" Width="{Binding SelectedSurface.BaseWidth, TargetNullValue=640}" Height="{Binding SelectedSurface.BaseHeight, TargetNullValue=470}" Stretch="Fill" IsHitTestVisible="False"/>
                                     <Rectangle Width="{Binding SelectedSurface.BaseWidth, TargetNullValue=640}" Height="{Binding SelectedSurface.BaseHeight, TargetNullValue=470}" Stroke="{StaticResource HareBorderBrush}" StrokeThickness="1" Fill="Transparent" IsHitTestVisible="False" Visibility="{Binding ShowRawBounds, Converter={StaticResource BoolToVisibility}}"/>
                                     <ItemsControl x:Name="canvasItemsControl" ItemsSource="{Binding SelectedSurface.Markers}" ItemContainerStyle="{StaticResource CanvasItemContainerStyle}" ItemsPanel="{StaticResource CanvasItemsPanelTemplate}" ItemTemplate="{StaticResource CanvasMarkerTemplate}"/>
                                 </Canvas>
+                                <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10" Padding="4" Panel.ZIndex="10" Background="{StaticResource HareSurfaceBrush}" BorderBrush="{StaticResource HareBorderBrush}" BorderThickness="1" CornerRadius="7">
+                                    <ToggleButton x:Name="addMarkerToolButton" Style="{StaticResource CanvasToolToggleStyle}" Click="AddMarkerTool_Click" AutomationProperties.Name="{world:WorldMapEditorText AddMarker}">
+                                        <ToggleButton.ToolTip>
+                                            <ToolTip Content="{world:WorldMapEditorText PlaceMarkerHint}"/>
+                                        </ToggleButton.ToolTip>
+                                        <Grid Width="22" Height="22">
+                                            <Ellipse Width="16" Height="16" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" StrokeThickness="2"/>
+                                            <Path Data="M11,6 L11,16 M6,11 L16,11" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        </Grid>
+                                    </ToggleButton>
+                                </Border>
                             </Grid>
                         </ScrollViewer>
                     </Border>

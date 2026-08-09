@@ -10,4 +10,7 @@
   <data name="UnknownMap"><value>&#xC54C; &#xC218; &#xC5C6;&#xB294; &#xB9F5;</value></data>
   <data name="AISettings"><value>AI 설정</value></data>
   <data name="AISettingsHint"><value>AI 엔드포인트, 모델 및 API 키를 구성합니다.</value></data>
+  <data name="PlaceMarkerHint"><value>마커 추가: 캔버스에서 원하는 위치를 클릭하세요. Escape 키 또는 마우스 오른쪽 버튼을 클릭하면 취소됩니다.</value></data>
+  <data name="MarkerPlacementCancelled"><value>마커 배치를 취소했습니다.</value></data>
+  <data name="MarkerPlaced"><value>X {0}, Y {1}에 마커를 추가했습니다.</value></data>
 </root>

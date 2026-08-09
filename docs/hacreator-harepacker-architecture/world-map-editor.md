@@ -25,6 +25,10 @@ modern clients can round-trip without schema cleanup.
   map catalog while keeping the native ID visible. Marker types stay numeric in the document but are presented with
   WZ-backed icon labels; values outside the known legacy icon set remain
   source-defined and round-trip unchanged.
+- The marker placement tool beside the canvas creates a marker at the clicked
+  logical canvas position, accounting for the base-image origin. It remains
+  coordinate-accurate while zoomed and can be cancelled with Escape or a
+  right-click.
 - `WorldMapPreviewCache` converts selected canvas assets to frozen WPF bitmaps
   with bounded source/fingerprint keyed caching.
 - `HotSwapRefreshService.WorldMapDataChanged` lets a workspace reload clean
@@ -45,8 +49,11 @@ the workspace status row.
    decoding every background.
 2. Open `WorldMap082` and `WorldMap0823` from the modern export; verify the
    Lacheln marker, base origin, links, and marker type 29.
-3. Move a marker, add and remove referenced maps with **Select a map**, choose a
-   labelled marker type, use undo/redo, validate, save, and reopen.
+3. Activate the marker placement tool, click an empty canvas position at several
+   zoom levels, and confirm the marker inspector reports that position. Cancel
+   once with Escape and once with right-click. Then add and remove referenced
+   maps with **Select a map**, choose a labelled marker type, use undo/redo,
+   validate, save, and reopen.
 4. Select a grouped marker and confirm progressive NPC/mob availability from map
    `life` entries, including missing-asset and categorised-life diagnostics.
 5. Toggle grid, labels, links, fog, derived overlays, and raw bounds; verify menu

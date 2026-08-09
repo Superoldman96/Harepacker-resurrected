@@ -294,6 +294,7 @@ public partial class WorldMapWorkspace : Window
     {
         if (e.PropertyName == nameof(WorldMapWorkspaceViewModel.SelectedSurface))
         {
+            CancelMarkerPlacement(updateStatus: false);
             AttachMarkerHandlers(viewModel.SelectedSurface);
             RenderCanvas();
         }
@@ -576,13 +577,34 @@ public partial class WorldMapWorkspace : Window
     {
         if (!placingMarker || viewModel.SelectedSurface == null)
             return;
+        if (e.OriginalSource is DependencyObject source &&
+            ItemsControl.ContainerFromElement(canvasItemsControl, source) != null)
+            return;
         Point point = e.GetPosition(worldCanvas);
-        double zoom = Math.Max(viewModel.Zoom, 0.01);
         int originX = viewModel.SelectedSurface.BaseOriginX;
         int originY = viewModel.SelectedSurface.BaseOriginY;
-        AddMarkerAt((int)Math.Round(point.X / zoom) - originX, (int)Math.Round(point.Y / zoom) - originY);
-        placingMarker = false;
-        viewModel.StatusText = WorldMapEditorTextExtension.Get("Ready");
+        int x = (int)Math.Round(point.X) - originX;
+        int y = (int)Math.Round(point.Y) - originY;
+        AddMarkerAt(x, y);
+        CancelMarkerPlacement(updateStatus: false);
+        viewModel.StatusText = WorldMapEditorTextExtension.Format("MarkerPlaced", x, y);
+        e.Handled = true;
+    }
+
+    private void Canvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!placingMarker)
+            return;
+        CancelMarkerPlacement();
+        e.Handled = true;
+    }
+
+    private void Workspace_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape || !placingMarker)
+            return;
+        CancelMarkerPlacement();
+        e.Handled = true;
     }
 
     private void NewSurface()
@@ -643,9 +665,35 @@ public partial class WorldMapWorkspace : Window
 
     private void BeginAddMarker()
     {
+        if (viewModel.SelectedSurface == null)
+            return;
         placingMarker = true;
-        viewModel.StatusText = WorldMapEditorTextExtension.Get("AddMarker") + " — click the canvas to place.";
+        if (addMarkerToolButton != null)
+            addMarkerToolButton.IsChecked = true;
+        worldCanvas.Cursor = Cursors.Cross;
+        viewModel.StatusText = WorldMapEditorTextExtension.Get("PlaceMarkerHint");
         worldCanvas.Focus();
+    }
+
+    private void AddMarkerTool_Click(object sender, RoutedEventArgs e)
+    {
+        if (addMarkerToolButton.IsChecked == true)
+            BeginAddMarker();
+        else
+            CancelMarkerPlacement();
+    }
+
+    private void CancelMarkerPlacement(bool updateStatus = true)
+    {
+        if (!placingMarker && addMarkerToolButton?.IsChecked != true)
+            return;
+        placingMarker = false;
+        if (addMarkerToolButton != null)
+            addMarkerToolButton.IsChecked = false;
+        if (worldCanvas != null)
+            worldCanvas.Cursor = null;
+        if (updateStatus)
+            viewModel.StatusText = WorldMapEditorTextExtension.Get("MarkerPlacementCancelled");
     }
 
     private void AddMarkerAt(int x, int y)

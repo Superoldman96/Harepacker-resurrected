@@ -10,4 +10,7 @@
   <data name="UnknownMap"><value>&#x672A;&#x77E5;&#x5730;&#x5716;</value></data>
   <data name="AISettings"><value>AI 設定</value></data>
   <data name="AISettingsHint"><value>設定 AI 端點、模型和 API 金鑰。</value></data>
+  <data name="PlaceMarkerHint"><value>新增標記：按一下畫布上的目標位置。按 Escape 鍵或按一下滑鼠右鍵即可取消。</value></data>
+  <data name="MarkerPlacementCancelled"><value>已取消標記放置。</value></data>
+  <data name="MarkerPlaced"><value>已在 X {0}、Y {1} 新增標記。</value></data>
 </root>
