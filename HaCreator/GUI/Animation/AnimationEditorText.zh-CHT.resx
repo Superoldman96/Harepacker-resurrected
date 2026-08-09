@@ -85,4 +85,6 @@
   <data name="AnimationEditor_DelayShort" xml:space="preserve"><value>延遲</value></data>
   <data name="AnimationEditor_ApplyAll" xml:space="preserve"><value>套用全部</value></data>
   <data name="AnimationEditor_ApplyDelayAllTooltip" xml:space="preserve"><value>將此延遲套用到每個影格</value></data>
+  <data name="AnimationEditor_AIRefineRecommendation"><value>文字模型可以讓提示詞更精確，強烈建議使用。現在要設定嗎？選擇「否」即可繼續使用原始提示詞。</value></data>
+  <data name="AnimationEditor_AIRefineSkipped"><value>已略過提示詞格式化，原始提示詞保持不變且仍可使用。</value></data>
 </root>

@@ -85,4 +85,6 @@
   <data name="AnimationEditor_DelayShort" xml:space="preserve"><value>遅延</value></data>
   <data name="AnimationEditor_ApplyAll" xml:space="preserve"><value>すべてに適用</value></data>
   <data name="AnimationEditor_ApplyDelayAllTooltip" xml:space="preserve"><value>この遅延をすべてのフレームに適用</value></data>
+  <data name="AnimationEditor_AIRefineRecommendation"><value>テキストモデルを使うとプロンプトをより正確にできます。使用を強くおすすめします。今すぐ設定しますか？「いいえ」を選ぶと raw プロンプトをそのまま使用できます。</value></data>
+  <data name="AnimationEditor_AIRefineSkipped"><value>プロンプトの整形をスキップしました。raw プロンプトは変更されず、そのまま使用できます。</value></data>
 </root>

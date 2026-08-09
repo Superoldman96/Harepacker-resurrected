@@ -85,4 +85,6 @@
   <data name="AnimationEditor_DelayShort" xml:space="preserve"><value>지연</value></data>
   <data name="AnimationEditor_ApplyAll" xml:space="preserve"><value>모두 적용</value></data>
   <data name="AnimationEditor_ApplyDelayAllTooltip" xml:space="preserve"><value>모든 프레임에 이 지연 적용</value></data>
+  <data name="AnimationEditor_AIRefineRecommendation"><value>텍스트 모델을 사용하면 프롬프트를 훨씬 정확하게 다듬을 수 있으므로 사용을 권장합니다. 지금 구성하시겠습니까? 아니요를 선택하면 원본 프롬프트를 계속 사용할 수 있습니다.</value></data>
+  <data name="AnimationEditor_AIRefineSkipped"><value>프롬프트 형식 지정을 건너뛰었습니다. 원본 프롬프트는 변경되지 않았으며 계속 사용할 수 있습니다.</value></data>
 </root>

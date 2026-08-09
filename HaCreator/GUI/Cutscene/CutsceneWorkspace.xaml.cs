@@ -1759,6 +1759,14 @@ namespace HaCreator.GUI.Cutscene
             try
             {
                 string normalized = soundPath.Replace('\\', '/').Trim('/');
+                if (Program.AudioAssetCatalog is HaCreator.Audio.IAudioAssetCatalog catalog)
+                {
+                    if (catalog.Entries.Count == 0)
+                        catalog.BuildIndexAsync().GetAwaiter().GetResult();
+                    HaCreator.Audio.AudioAssetEntry catalogEntry = catalog.Find(normalized);
+                    if (catalogEntry != null)
+                        return catalog.LoadPropertyAsync(catalogEntry).GetAwaiter().GetResult();
+                }
                 string[] segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
                 string category = "Sound";
                 int offset = 0;

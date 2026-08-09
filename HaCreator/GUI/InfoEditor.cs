@@ -100,6 +100,18 @@ namespace HaCreator.GUI
                 bgmBox.Items.Add(bgm);
             bgmBox.SelectedItem = info.bgm;
 
+            // AmbientBGM is optional and uses the same recursive Sound
+            // catalogue as the primary BGM picker.  Keep the original map
+            // spelling in MapInfo while exposing a convenient selection UI.
+            foreach (string bgm in sortedBGMs)
+                ambientBgmBox.Items.Add(bgm);
+            ambientBgmBox.SelectedItem = info.AmbientBgm;
+            if (info.AmbientVolume.HasValue)
+                ambientBgmVolume.Value = Math.Clamp(info.AmbientVolume.Value, 0, 100);
+            audioLayerSummary.Text = info.BgmSub == null
+                ? "No bgmSub layer tree"
+                : $"bgmSub layers: {CountAudioLayers(info.BgmSub):N0}";
+
             List<string> sortedMarks = new List<string>();
             foreach (KeyValuePair<string, Bitmap> mark in Program.InfoManager.MapMarks)
                 sortedMarks.Add(mark.Key);
@@ -415,6 +427,47 @@ namespace HaCreator.GUI
                 new Action(() => LoadSelectedBgmPreview(bgm)));
         }
 
+        private void ambientBgmBox_SelectedIndexChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Ambient playback uses the same preview control only when the
+            // user explicitly selects an ambient entry.  Do not replace a
+            // primary preview while the map form is initializing.
+            if (ambientBgmBox.SelectedItem is not string bgm || string.IsNullOrWhiteSpace(bgm))
+                return;
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+                new Action(() =>
+                {
+                    if (!string.Equals(ambientBgmBox.SelectedItem as string, bgm, StringComparison.Ordinal))
+                        return;
+                    WzBinaryProperty soundProperty = Program.InfoManager.GetBgm(bgm);
+                    if (soundProperty != null)
+                        soundPlayer1.SoundProperty = soundProperty;
+                }));
+        }
+
+        private static int CountAudioLayers(WzImageProperty root)
+        {
+            if (root == null)
+                return 0;
+            try
+            {
+                return 1 + root.WzProperties.Sum(CountAudioLayers);
+            }
+            catch
+            {
+                return 1;
+            }
+        }
+
+        private void OpenAudioStudio_Click(object sender, RoutedEventArgs e)
+        {
+            var workspace = new GUI.Audio.AudioWorkspace
+            {
+                Owner = this
+            };
+            workspace.ShowDialog();
+        }
+
         private void OpenCutsceneEditor_Click(object sender, RoutedEventArgs e)
         {
             info.onFirstUserEnter = GetOptionalString(firstUserEnter, firstUserEnable);
@@ -500,7 +553,11 @@ namespace HaCreator.GUI
             {
                 if (info.mapType != MapType.CashShopPreview && info.mapType != MapType.ITCPreview)
                 {
-                    info.bgm = (string)bgmBox.SelectedItem;
+                    info.SetPrimaryBgm((string)bgmBox.SelectedItem);
+                    string ambient = ambientBgmBox.SelectedItem as string;
+                    info.SetAmbientBgm(
+                        string.IsNullOrWhiteSpace(ambient) ? null : ambient,
+                        string.IsNullOrWhiteSpace(ambient) ? null : (int?)ambientBgmVolume.Value);
                     info.mapMark = (string)markBox.SelectedItem;
                 }
                 if (info.mapType == MapType.RegularMap)

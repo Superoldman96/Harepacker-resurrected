@@ -10,6 +10,7 @@
         xmlns:editorItems="clr-namespace:HaCreator.GUI.EditorPanels"
         xmlns:mapEditor="clr-namespace:HaCreator.MapEditor"
         xmlns:cutscene="clr-namespace:HaCreator.GUI.Cutscene"
+        xmlns:audio="clr-namespace:HaCreator.GUI.Audio"
 
         mc:Ignorable="d" 
         d:DesignHeight="721" d:DesignWidth="1111" 
@@ -68,6 +69,8 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -76,8 +79,8 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -94,6 +97,14 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="WorkspaceCommandButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource CommandButtonStyle}">
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style x:Key="PrimaryCommandButtonStyle"
@@ -366,6 +377,7 @@
                         <MenuItem Header="{loc:Loc Editor_Quest_editor_A8BFA2}" Command="{x:Static local:HaEditor.ShowQuestEditorWindow}"/>
                         <MenuItem Header="{loc:Loc Editor_Animation_editor_6F43C2}" Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}"/>
                         <MenuItem Header="{cutscene:CutsceneEditorText Cutscene_Title}" Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}"/>
+                        <MenuItem Header="{audio:AudioWorkspaceText Title}" Click="ShowAudioStudio_Click"/>
                     </MenuItem>
                     <MenuItem Header="{loc:Loc Editor_Tools_EA93D6}">
                         <MenuItem Header="{loc:Loc Editor_Settings_74A883}" Command="{x:Static local:HaEditor.Settings}"/>
@@ -409,29 +421,65 @@
                 </Border>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource CommandButtonStyle}"
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
                             Command="{x:Static local:HaEditor.ShowQuestEditorWindow}"
                             ToolTip="{loc:Loc Editor_Open_Quest_Editor_C0AFD3}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontSize="15" Text="▤"/>
-                            <TextBlock Margin="7,0,0,0" Text="{loc:Loc Editor_Quests_60D40D}"/>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="15" Text="▤"/>
+                            <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{loc:Loc Editor_Quests_60D40D}"/>
+                        </Grid>
                     </Button>
-                    <Button Style="{StaticResource CommandButtonStyle}"
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
                             Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}"
                             ToolTip="{loc:Loc Editor_Open_Animation_Editor_7B921E}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE7FC;"/>
-                            <TextBlock Margin="7,0,0,0" Text="{loc:Loc Editor_Animations_2D94A1}"/>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE7FC;"/>
+                            <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{loc:Loc Editor_Animations_2D94A1}"/>
+                        </Grid>
                     </Button>
-                    <Button Style="{StaticResource CommandButtonStyle}"
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
                             Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}"
                             ToolTip="{cutscene:CutsceneEditorText Cutscene_Title}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE8B2;"/>
-                            <TextBlock Margin="7,0,0,0" Text="{cutscene:CutsceneEditorText Cutscene_Title}"/>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE8B2;"/>
+                            <StackPanel Grid.Column="1" Margin="7,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock VerticalAlignment="Center" Text="{cutscene:CutsceneEditorText Cutscene_CommandLabel}"/>
+                                <Border Margin="7,0,0,0"
+                                        Padding="4,1"
+                                        VerticalAlignment="Center"
+                                        Background="#E2E8F0"
+                                        CornerRadius="3">
+                                    <TextBlock FontSize="9"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource MutedTextBrush}"
+                                               Text="{cutscene:CutsceneEditorText Cutscene_EditorBadge}"/>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
+                            Click="ShowAudioStudio_Click"
+                            ToolTip="{audio:AudioWorkspaceText Title}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE8D6;"/>
+                            <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{audio:AudioWorkspaceText Title}"/>
+                        </Grid>
                     </Button>
                     <Button Style="{StaticResource CommandButtonStyle}" Click="ShowMapBrowser_Click" ToolTip="{loc:Loc Editor_Search_maps_and_commands_FF74F6}">
                         <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="16" Text="&#xE721;"/>

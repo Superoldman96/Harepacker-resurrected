@@ -1,5 +1,6 @@
 ﻿using HaCreator.MapEditor.Info;
 using HaSharedLibrary.Wz;
+using HaCreator.Audio;
 using MapleLib;
 using MapleLib.Img;
 using MapleLib.WzLib;
@@ -27,6 +28,8 @@ namespace HaCreator.Wz
 
             public string ImageName { get; }
             public string PropertyPath { get; }
+            public string ImagePath => ImageName;
+            public string FullPropertyPath => PropertyPath;
         }
 
         public Dictionary<string, ReactorInfo> Reactors = new Dictionary<string, ReactorInfo>();
@@ -37,6 +40,20 @@ namespace HaCreator.Wz
         public IDictionary<string, WzImage> BackgroundSets = new Dictionary<string, WzImage>();
 
         public Dictionary<string, BgmEntry> BGMs = new Dictionary<string, BgmEntry>();
+        private IAudioAssetCatalog audioCatalog;
+
+        /// <summary>Shared Sound catalog projection used by map and AI code.</summary>
+        public IAudioAssetCatalog AudioCatalog
+        {
+            get
+            {
+                if (Program.DataSource == null)
+                    return audioCatalog;
+                if (audioCatalog == null || !ReferenceEquals(audioCatalog.DataSource, Program.DataSource))
+                    audioCatalog = Program.AudioAssetCatalog ?? new AudioAssetCatalog(Program.DataSource);
+                return audioCatalog;
+            }
+        }
 
         // Maps
         public Dictionary<string, Bitmap> MapMarks = new Dictionary<string, Bitmap>();
@@ -282,6 +299,7 @@ namespace HaCreator.Wz
             ObjectSets.Clear();
             BackgroundSets.Clear();
             BGMs.Clear();
+            audioCatalog = null;
             MapMarks.Clear();
             MapsNameCache.Clear();
             MapsCache.Clear();
@@ -293,15 +311,66 @@ namespace HaCreator.Wz
 
         public WzBinaryProperty GetBgm(string name)
         {
-            if (string.IsNullOrEmpty(name) || !BGMs.TryGetValue(name, out var entry))
+            if (string.IsNullOrEmpty(name))
                 return null;
 
-            WzImage image = Program.FindImage("Sound", entry.ImageName);
+            if (!BGMs.TryGetValue(name, out var entry))
+            {
+                RefreshAudioCatalogProjection();
+                if (!BGMs.TryGetValue(name, out entry))
+                {
+                    AudioAssetEntry catalogEntry = AudioCatalog?.Find(name);
+                    if (catalogEntry != null)
+                        entry = new BgmEntry(catalogEntry.ImagePath, catalogEntry.PropertyPath);
+                }
+            }
+            if (entry == null)
+                return null;
+
+            WzImage image = Program.FindImage("Sound", entry.ImageName)
+                ?? Program.DataSource?.GetImage("Sound", entry.ImageName);
             image?.ParseImage();
             if (image == null)
                 return null;
 
             return image.GetFromPath(entry.PropertyPath) as WzBinaryProperty;
+        }
+
+        /// <summary>
+        /// Rebuilds the legacy BGMs dictionary from the recursive catalog.
+        /// Keys retain the historical <c>Bgm00/Track</c> form while nested
+        /// BgmMultiTrack paths are represented without truncation.
+        /// </summary>
+        public bool RefreshAudioCatalogProjection()
+        {
+            IAudioAssetCatalog catalog = AudioCatalog;
+            if (catalog == null)
+                return false;
+            IReadOnlyList<AudioAssetEntry> assets;
+            try
+            {
+                assets = catalog.BuildIndexAsync().GetAwaiter().GetResult();
+            }
+            catch
+            {
+                return false;
+            }
+
+            BGMs.Clear();
+            foreach (AudioAssetEntry asset in assets.Where(item =>
+                item.Category == AudioAssetCategory.Bgm ||
+                item.Category == AudioAssetCategory.Regional))
+            {
+                string imageName = asset.ImagePath;
+                string key = WzInfoTools.RemoveExtension(imageName) + "/" + asset.PropertyPath;
+                if (!BGMs.ContainsKey(key))
+                    BGMs[key] = new BgmEntry(imageName, asset.PropertyPath);
+
+                string canonical = asset.CanonicalPath;
+                if (!BGMs.ContainsKey(canonical))
+                    BGMs[canonical] = new BgmEntry(imageName, asset.PropertyPath);
+            }
+            return true;
         }
 
         public static string GetPropertyPathRelativeToImage(WzImageProperty property)

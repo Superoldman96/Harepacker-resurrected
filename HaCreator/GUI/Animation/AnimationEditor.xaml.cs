@@ -1129,10 +1129,19 @@ namespace HaCreator.GUI.FrameAnimation
                 return;
             }
 
-            if (!EnsureAIConfiguration())
+            if (!AISettings.IsConfigured)
             {
-                aiStatusText.Text = AnimationEditorTextExtension.Get("AnimationEditor_AINotConfigured");
-                return;
+                MessageBoxResult choice = MessageBox.Show(this,
+                    AnimationEditorTextExtension.Get("AnimationEditor_AIRefineRecommendation"),
+                    AnimationEditorTextExtension.Get("AnimationEditor_AISettings"),
+                    MessageBoxButton.YesNo, MessageBoxImage.Information);
+                if (choice == MessageBoxResult.Yes)
+                    OpenAISettingsDialog();
+                if (!AISettings.IsConfigured)
+                {
+                    aiStatusText.Text = AnimationEditorTextExtension.Get("AnimationEditor_AIRefineSkipped");
+                    return;
+                }
             }
 
             CancelAIWork();

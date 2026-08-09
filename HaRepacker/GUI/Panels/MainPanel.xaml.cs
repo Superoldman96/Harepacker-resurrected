@@ -22,6 +22,7 @@ using HaRepacker.GUI.Controls;
 using MapleLib.WzLib.WzStructure.Data;
 using System.ComponentModel.DataAnnotations;
 using MapleLib.Img;
+using HaSharedLibrary.Audio;
 
 namespace HaRepacker.GUI.Panels
 {
@@ -105,6 +106,10 @@ namespace HaRepacker.GUI.Panels
             menuItem_changeImage.Visibility = Visibility.Collapsed;
             menuItem_changeSound.Visibility = Visibility.Collapsed;
             menuItem_saveSound.Visibility = Visibility.Collapsed;
+            menuItem_openAudioStudio.Visibility = Visibility.Collapsed;
+            menuItem_applyAudioProject.Visibility = Visibility.Collapsed;
+            menuItem_exportDecodedWav.Visibility = Visibility.Collapsed;
+            menuItem_audioMetadata.Visibility = Visibility.Collapsed;
             menuItem_saveImage.Visibility = Visibility.Collapsed;
             button_MoreOption.Content = UiLocalization.Translate("More actions");
             button_MoreOption.ToolTip = UiLocalization.Translate("More actions");
@@ -1613,6 +1618,168 @@ namespace HaRepacker.GUI.Panels
             sound.SaveToFile(dialog.FileName);
         }
 
+        private void MenuItem_openAudioStudio_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataTree.SelectedNode?.Tag is not WzBinaryProperty sound)
+                return;
+            var dialog = new System.Windows.Forms.SaveFileDialog
+            {
+                FileName = sound.Name + AudioProject.FileExtension,
+                DefaultExt = "hasound.json",
+                AddExtension = true,
+                Filter = "HaCreator Audio Project (*.hasound.json)|*.hasound.json",
+                Title = UiLocalization.Translate("Create an Audio Studio project")
+            };
+            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
+
+            var project = AudioProject.Create(sound.Name);
+            var track = project.AddTrack(sound.Name, AudioTrackRole.SoundEffect);
+            long durationSamples = Math.Max(1L,
+                (long)Math.Round(sound.Length * project.MasterFormat.SampleRate / 1000d,
+                    MidpointRounding.AwayFromZero));
+            track.AddClip(new AudioSourceReference
+            {
+                SourceKind = AudioSourceKind.NativeWz,
+                SourceId = sound.FullPath,
+                PropertyPath = sound.FullPath,
+                FormatMetadata = new AudioClipMetadata
+                {
+                    DeclaredDurationMilliseconds = sound.Length,
+                    PayloadSizeBytes = sound.SoundDataLength,
+                    IsNativeWz = true
+                }
+            }, 0, durationSamples);
+            project.Save(dialog.FileName);
+            System.Windows.MessageBox.Show(UiLocalization.Translate("The Audio Studio project was created and can be opened in HaCreator."),
+                UiLocalization.Translate("Audio Studio"), MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private async void MenuItem_applyAudioProject_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataTree.SelectedNode?.Tag is not WzBinaryProperty sound)
+                return;
+            var dialog = new System.Windows.Forms.OpenFileDialog
+            {
+                Filter = "HaCreator Audio Project (*.hasound.json)|*.hasound.json",
+                DefaultExt = "hasound.json",
+                Title = UiLocalization.Translate("Apply Audio Studio project")
+            };
+            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
+
+            try
+            {
+                AudioProject project = AudioProject.Load(dialog.FileName);
+                string projectDirectory = Path.GetDirectoryName(Path.GetFullPath(dialog.FileName));
+                var codec = new DefaultAudioCodecProvider();
+                var renderer = new AudioRenderer();
+                var renderRequest = new AudioRenderRequest
+                {
+                    Project = project,
+                    SourceResolver = async (source, cancellationToken) =>
+                    {
+                        if (source.SourceKind == AudioSourceKind.NativeWz)
+                        {
+                            // A project created from this selected node can be
+                            // rendered offline without retaining a WZ path.
+                            // Other native references are deliberately rejected
+                            // instead of silently reading a different source.
+                            string expected = sound.FullPath;
+                            if (string.Equals(source.PropertyPath, expected, StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(source.SourceId, expected, StringComparison.OrdinalIgnoreCase))
+                                return await codec.DecodeAsync(sound, cancellationToken).ConfigureAwait(false);
+                            throw new AudioCodecException(AudioDiagnosticCode.MissingSource,
+                                "The project references a native WZ sound other than the selected property.");
+                        }
+
+                        return await codec.DecodeAsync(source, projectDirectory, cancellationToken).ConfigureAwait(false);
+                    }
+                };
+                AudioEncodeResult rendered = await renderer.RenderToAsync(renderRequest, codec,
+                    new AudioEncodeSettings
+                    {
+                        Encoding = AudioEncoding.Pcm,
+                        SampleRate = project.MasterFormat.SampleRate,
+                        ChannelCount = project.MasterFormat.ChannelCount,
+                        BitsPerSample = 16,
+                    });
+                string temporaryPath = Path.Combine(Path.GetTempPath(), $"harepacker-bake-{Guid.NewGuid():N}.wav");
+                try
+                {
+                    File.WriteAllBytes(temporaryPath, rendered.Data);
+                    var baked = new WzBinaryProperty(sound.Name, temporaryPath);
+                    if (sound.Parent is not IPropertyContainer parent)
+                        throw new InvalidOperationException("The selected sound does not have a writable parent.");
+                    WzImage parentImage = sound.ParentImage;
+                    if (parentImage == null)
+                        throw new InvalidOperationException("The selected sound is not attached to an image.");
+                    sound.Remove();
+                    parent.AddProperty(baked);
+                    parentImage.Changed = true;
+                    DataTree.SelectedNode.Tag = baked;
+                    mp3Player.SoundProperty = baked;
+                    System.Windows.MessageBox.Show(UiLocalization.Translate("The Audio Studio project was rendered and baked into the selected WZ property. Save the WZ/IMG to commit it."),
+                        UiLocalization.Translate("Audio Studio"), MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                finally
+                {
+                    try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
+                    catch { }
+                }
+            }
+            catch (Exception exception)
+            {
+                Warning.Error(exception.Message);
+            }
+        }
+
+        private async void MenuItem_exportDecodedWav_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataTree.SelectedNode?.Tag is not WzBinaryProperty sound)
+                return;
+            var dialog = new System.Windows.Forms.SaveFileDialog
+            {
+                FileName = sound.Name + ".wav",
+                DefaultExt = "wav",
+                AddExtension = true,
+                Filter = "WAV audio (*.wav)|*.wav",
+                Title = UiLocalization.Translate("Export decoded WAV")
+            };
+            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
+            try
+            {
+                byte[] bytes = sound.IsWaveFile ? sound.GetBytesForWAVPlayback() : sound.GetBytes(false);
+                using var input = new MemoryStream(bytes, writable: false);
+                var codec = new NAudioCodecProvider();
+                AudioDecodeResult decoded = await codec.DecodeAsync(input, sound.FileExtension,
+                    new AudioClipMetadata { DeclaredDurationMilliseconds = sound.Length, IsNativeWz = true });
+                AudioEncodeResult encoded = await codec.EncodeAsync(decoded.Buffer, new AudioEncodeSettings
+                {
+                    Encoding = AudioEncoding.Pcm,
+                    SampleRate = decoded.Buffer.Format.SampleRate,
+                    ChannelCount = decoded.Buffer.Format.ChannelCount,
+                    BitsPerSample = 16
+                });
+                File.WriteAllBytes(dialog.FileName, encoded.Data);
+            }
+            catch (Exception exception)
+            {
+                Warning.Error(exception.Message);
+            }
+        }
+
+        private void MenuItem_audioMetadata_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataTree.SelectedNode?.Tag is not WzBinaryProperty sound)
+                return;
+            string kind = sound.IsWaveFile ? "PCM WAV" : "MP3";
+            string text = $"{sound.FullPath}\nEncoding: {kind}\nWZ duration: {sound.Length} ms\nPayload: {sound.SoundDataLength:N0} bytes";
+            System.Windows.MessageBox.Show(text, UiLocalization.Translate("Audio metadata"),
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
         /// <summary>
         /// Saving the image from WzCanvasProperty
         /// </summary>
@@ -2068,6 +2235,10 @@ namespace HaRepacker.GUI.Panels
                 menuItem_saveImage.Visibility = Visibility.Collapsed;
                 menuItem_changeSound.Visibility = Visibility.Collapsed;
                 menuItem_saveSound.Visibility = Visibility.Collapsed;
+                menuItem_openAudioStudio.Visibility = Visibility.Collapsed;
+                menuItem_applyAudioProject.Visibility = Visibility.Collapsed;
+                menuItem_exportDecodedWav.Visibility = Visibility.Collapsed;
+                menuItem_audioMetadata.Visibility = Visibility.Collapsed;
                 menuItem_exportFile.Visibility = Visibility.Collapsed;
 
                 // Canvas collapsed state
@@ -2185,6 +2356,10 @@ namespace HaRepacker.GUI.Panels
 
                         menuItem_changeSound.Visibility = Visibility.Visible;
                         menuItem_saveSound.Visibility = Visibility.Visible;
+                        menuItem_openAudioStudio.Visibility = Visibility.Visible;
+                        menuItem_applyAudioProject.Visibility = Visibility.Visible;
+                        menuItem_exportDecodedWav.Visibility = Visibility.Visible;
+                        menuItem_audioMetadata.Visibility = Visibility.Visible;
                     }
 
                     // Value
@@ -2200,6 +2375,10 @@ namespace HaRepacker.GUI.Panels
 
                     menuItem_changeSound.Visibility = Visibility.Visible;
                     menuItem_saveSound.Visibility = Visibility.Visible;
+                    menuItem_openAudioStudio.Visibility = Visibility.Visible;
+                    menuItem_applyAudioProject.Visibility = Visibility.Visible;
+                    menuItem_exportDecodedWav.Visibility = Visibility.Visible;
+                    menuItem_audioMetadata.Visibility = Visibility.Visible;
                 }
                 else if (bIsWzLuaProperty) {
                     textEditor.Visibility = Visibility.Visible;

@@ -2434,6 +2434,8 @@ namespace HaCreator.MapEditor.AI
 
             // Validate the BGM exists
             if (!Program.InfoManager.BGMs.ContainsKey(bgm))
+                Program.InfoManager.RefreshAudioCatalogProjection();
+            if (!Program.InfoManager.BGMs.ContainsKey(bgm))
             {
                 // Try to find a close match
                 var availableBgms = Program.InfoManager.BGMs.Keys
@@ -2446,7 +2448,7 @@ namespace HaCreator.MapEditor.AI
 
             // Set the BGM
             string oldBgm = board.MapInfo.bgm;
-            board.MapInfo.bgm = bgm;
+            board.MapInfo.SetPrimaryBgm(bgm);
 
             Log($"Changed BGM from '{oldBgm}' to '{bgm}'");
             return true;

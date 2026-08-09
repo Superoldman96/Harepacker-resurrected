@@ -15,6 +15,12 @@
   <data name="Cutscene_Title">
     <value>過場動畫工作區</value>
   </data>
+  <data name="Cutscene_CommandLabel">
+    <value>過場動畫</value>
+  </data>
+  <data name="Cutscene_EditorBadge">
+    <value>編輯器</value>
+  </data>
   <data name="Cutscene_Save">
     <value>儲存變更</value>
   </data>

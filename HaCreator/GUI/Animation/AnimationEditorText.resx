@@ -179,4 +179,6 @@ Open AI Settings now?</value></data>
     <data name="AnimationEditor_DelayShort" xml:space="preserve"><value>Delay</value></data>
     <data name="AnimationEditor_ApplyAll" xml:space="preserve"><value>Apply all</value></data>
     <data name="AnimationEditor_ApplyDelayAllTooltip" xml:space="preserve"><value>Apply this delay to every frame</value></data>
+  <data name="AnimationEditor_AIRefineRecommendation" xml:space="preserve"><value>A text model can make the prompt much more precise and is highly recommended. Configure one now? Choose No to keep using the raw prompt.</value></data>
+  <data name="AnimationEditor_AIRefineSkipped" xml:space="preserve"><value>Prompt formatting skipped. The raw prompt is unchanged and can still be used.</value></data>
 </root>

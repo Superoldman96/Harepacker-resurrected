@@ -21,6 +21,11 @@ namespace HaCreator.GUI
     /// </summary>
     public partial class HaEditor : Window
     {
+        private void ShowAudioStudio_Click(object sender, RoutedEventArgs e)
+        {
+            var workspace = new Audio.AudioWorkspace { Owner = this };
+            workspace.Show();
+        }
         private InputHandler handler;
         public HaCreatorStateManager hcsm;
         private bool _isObjectViewerInitialized;

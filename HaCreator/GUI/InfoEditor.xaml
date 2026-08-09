@@ -38,6 +38,9 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Text="Map ID"/>
                     <TextBlock x:Name="IDLabel" Grid.Column="1" FontWeight="SemiBold"/>
@@ -54,6 +57,13 @@
                     <TextBlock Grid.Row="8" Text="BGM"/>
                         <ComboBox x:Name="bgmBox" Grid.Row="8" Grid.Column="1" Margin="0,3" IsEditable="True" IsReadOnly="True" Text="{Binding SelectedItem, RelativeSource={RelativeSource Self}, Mode=OneWay}" SelectionChanged="bgmBox_SelectedIndexChanged"/>
                         <shared:SoundPlayer x:Name="soundPlayer1" Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" Grid.RowSpan="2" Margin="0,8,12,0"/>
+
+                    <TextBlock Grid.Row="9" Grid.Column="2" Text="Ambient BGM"/>
+                    <ComboBox x:Name="ambientBgmBox" Grid.Row="9" Grid.Column="3" Margin="0,3" IsEditable="True" IsReadOnly="True" SelectionChanged="ambientBgmBox_SelectedIndexChanged"/>
+                    <TextBlock Grid.Row="10" Grid.Column="2" Text="Ambient volume"/>
+                    <local:NumericUpDown x:Name="ambientBgmVolume" Grid.Row="10" Grid.Column="3" Minimum="0" Maximum="100" Width="180" MinWidth="0" HorizontalAlignment="Left"/>
+                    <Button Grid.Row="11" Grid.Column="2" Grid.ColumnSpan="2" Content="Open Audio Studio" Margin="0,8,0,0" Click="OpenAudioStudio_Click"/>
+                    <TextBlock x:Name="audioLayerSummary" Grid.Row="12" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,4,0,0" Opacity="0.72" TextWrapping="Wrap"/>
 
                     <TextBlock Grid.Column="2" Text="Map mark"/>
                     <ComboBox x:Name="markBox" Grid.Column="3" Margin="0,3" SelectionChanged="markBox_SelectedIndexChanged"/>

@@ -521,6 +521,8 @@ namespace HaCreator.MapEditor.AI
             sb.AppendLine("Format: path (use exact path with set_bgm)");
             sb.AppendLine();
 
+            if (Program.InfoManager.BGMs.Count == 0)
+                Program.InfoManager.RefreshAudioCatalogProjection();
             var bgms = Program.InfoManager.BGMs.Keys
                 .Where(k => k.StartsWith("Bgm", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(k => k)

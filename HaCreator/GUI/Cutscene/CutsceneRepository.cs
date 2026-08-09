@@ -1,6 +1,7 @@
 using MapleLib.Img;
 using MapleLib.WzLib;
 using MapleLib.WzLib.WzProperties;
+using HaCreator.Audio;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -81,6 +82,27 @@ namespace HaCreator.GUI.Cutscene
 
         public static IReadOnlyList<string> LoadSoundImageIndex()
         {
+            IAudioAssetCatalog catalog = Program.AudioAssetCatalog;
+            if (catalog != null)
+            {
+                try
+                {
+                    IReadOnlyList<AudioAssetEntry> assets = catalog.BuildIndexAsync().GetAwaiter().GetResult();
+                    return assets
+                        .Select(asset => asset.ImagePath)
+                        .Where(path => !string.IsNullOrWhiteSpace(path))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                }
+                catch
+                {
+                    // Fall back to the legacy enumerator for partially loaded
+                    // data sources; malformed sound properties should not
+                    // prevent the cutscene workspace from opening.
+                }
+            }
+
             List<string> imagePaths = new();
             if (Program.DataSource is ImgFileSystemDataSource imgSource)
             {
@@ -134,6 +156,33 @@ namespace HaCreator.GUI.Cutscene
             string normalizedImagePath = imagePath?.Replace('\\', '/').Trim('/');
             if (string.IsNullOrWhiteSpace(normalizedImagePath))
                 return Array.Empty<string>();
+
+            IAudioAssetCatalog catalog = Program.AudioAssetCatalog;
+            if (catalog != null)
+            {
+                try
+                {
+                    string imageOnly = normalizedImagePath;
+                    if (imageOnly.StartsWith("Sound/", StringComparison.OrdinalIgnoreCase))
+                        imageOnly = imageOnly.Substring("Sound/".Length);
+                    IReadOnlyList<AudioAssetEntry> assets = catalog.SearchAsync(new AudioAssetSearchFilter
+                    {
+                        ImagePath = imageOnly,
+                    }).GetAwaiter().GetResult();
+                    if (assets.Count > 0)
+                    {
+                        return assets
+                            .Select(asset => asset.OriginalPath)
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                            .ToList();
+                    }
+                }
+                catch
+                {
+                    // Keep legacy resolution as a compatibility fallback.
+                }
+            }
 
             (string category, string relativeImagePath) = SplitSoundImagePath(normalizedImagePath);
             WzImage image = Program.FindImage(category, relativeImagePath)
@@ -235,6 +284,29 @@ namespace HaCreator.GUI.Cutscene
             {
                 image.UnparseImage();
             }
+        }
+
+        internal static IReadOnlyList<(string ScenePath, string EventId, string SoundPath)> FindSoundUsages(
+            IEnumerable<CutsceneSceneModel> scenes,
+            string assetPath = null)
+        {
+            string normalized = string.IsNullOrWhiteSpace(assetPath)
+                ? null
+                : AudioAssetCatalog.NormalizePath(assetPath);
+            var usages = new List<(string ScenePath, string EventId, string SoundPath)>();
+            foreach (CutsceneSceneModel scene in scenes ?? Enumerable.Empty<CutsceneSceneModel>())
+            {
+                foreach (CutsceneEventModel item in scene.Events ?? Enumerable.Empty<CutsceneEventModel>())
+                {
+                    if (string.IsNullOrWhiteSpace(item.Sound))
+                        continue;
+                    if (normalized != null &&
+                        !string.Equals(AudioAssetCatalog.NormalizePath(item.Sound), normalized, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    usages.Add((scene.Path, item.Id, item.Sound));
+                }
+            }
+            return usages;
         }
 
         private static string EnsureImgExtension(string name) => name.EndsWith(".img", StringComparison.OrdinalIgnoreCase)
