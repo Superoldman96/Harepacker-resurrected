@@ -3,7 +3,7 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <RootNamespace>HaRepacker</RootNamespace>
-    <AssemblyName>HaRepackerResurrected</AssemblyName>
+    <AssemblyName>WvsWzImg</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 
     <UseWindowsForms>True</UseWindowsForms>
