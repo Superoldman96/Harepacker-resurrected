@@ -241,18 +241,23 @@ and the [MapleStory V overview](https://maplestory.fandom.com/wiki/MapleStory:_V
 - Shared across all data sources
 
 ### Lazy Loading
-- TileSets, ObjectSets, BackgroundSets use `LazyWzImageDictionary`
-- Images loaded only when accessed
-- MapInfo created on-demand when map opened
+- Category discovery does not recursively index every IMG file. A recursive category index is built only for APIs that require a complete category scan; directory-name APIs enumerate only their requested directory.
+- Standalone IMG readers parse property headers and retain shareable readers. Canvas and sound payload bytes remain on disk until rendered or played; startup does not calculate whole-file checksums.
+- TileSets, ObjectSets, and BackgroundSets register filenames and load images only when accessed.
+- MapInfo is created when a map opens.
+- A map's BGM path resolves directly to its owning Sound IMG and property. The complete audio catalogue is built only by explicit catalogue/browse workflows.
+- Reactor definitions load from IDs referenced by the opened map. Mob/NPC assets load from that map, and skill assets load for the active character.
+- Startup reads only `String/Map.img`. Other localized String catalogues and Quest metadata load when their selectors or editors open.
 
 ### Memory Usage Comparison
 
 | Data Type | Traditional WZ | IMG Filesystem |
 |-----------|----------------|----------------|
-| Startup memory | 40GB+ (all loaded) | 2-4GB (lazy) |
+| Startup memory | 40GB+ (all loaded) | About 99 MB working set in the measured post-V probe |
 | Tiles/Objects | All at startup | On-demand |
 | Maps | All WzImages kept | Metadata only |
-| NPCs/Mobs | Icons preloaded | Names only, icons on-demand |
+| BGM/Reactor | Complete categories parsed | Opened map only |
+| NPCs/Mobs | Icons preloaded | IDs from filenames; assets on-demand |
 
 ---
 

@@ -42,29 +42,16 @@ namespace HaCreator.Wz
         /// </summary>
         public void ExtractAll()
         {
-            ReportProgress("Extracting String data...");
-            ExtractStringData();
+            ReportProgress("Extracting map names...");
+            ExtractMapStringData();
 
-            ReportProgress("Extracting Mob data...");
-            ExtractMobData();
+            // Reactor assets are resolved from the IDs in the opened map.
+            // Sound assets are resolved from that map's BGM path.  Scanning
+            // either complete category here materializes gigabytes of payload
+            // data in current post-V exports before a map is selected.
 
-            ReportProgress("Extracting NPC data...");
-            ExtractNpcData();
-
-            ReportProgress("Extracting Reactor data...");
-            ExtractReactorData();
-
-            ReportProgress("Extracting Sound data...");
-            ExtractSoundData();
-
-            ReportProgress("Extracting Quest data...");
-            ExtractQuestData();
-
-            ReportProgress("Extracting Skill data...");
-            ExtractSkillData();
-
-            ReportProgress("Extracting Item data...");
-            ExtractItemData();
+            // Quest and selector name catalogues are populated when their
+            // editors are opened rather than during application startup.
 
             ReportProgress("Extracting Map marks...");
             ExtractMapMarks();
@@ -92,7 +79,11 @@ namespace HaCreator.Wz
         /// </summary>
         public void ExtractStringData()
         {
-            if (_infoManager.MapsNameCache.Count != 0)
+            if (_infoManager.MapsNameCache.Count != 0 &&
+                _infoManager.NpcNameCache.Count != 0 &&
+                _infoManager.MobNameCache.Count != 0 &&
+                _infoManager.SkillNameCache.Count != 0 &&
+                _infoManager.ItemNameCache.Count != 0)
                 return;
 
             // NPC strings
@@ -216,6 +207,39 @@ namespace HaCreator.Wz
             {
                 petImg.ParseImage();
                 ExtractItemStrings(petImg.WzProperties, "Pet");
+            }
+        }
+
+        /// <summary>
+        /// Loads only the map-name catalogue required by the startup map
+        /// picker. Other String images are deferred to selector workflows.
+        /// </summary>
+        public void ExtractMapStringData()
+        {
+            if (_infoManager.MapsNameCache.Count != 0)
+                return;
+
+            WzImage mapImg = _dataSource.GetImage("String", "Map.img");
+            if (mapImg == null)
+                return;
+
+            mapImg.ParseImage();
+            foreach (WzSubProperty mapCategory in mapImg.WzProperties)
+            {
+                foreach (WzSubProperty map in mapCategory.WzProperties)
+                {
+                    WzStringProperty streetName = map["streetName"] as WzStringProperty;
+                    WzStringProperty mapName = map["mapName"] as WzStringProperty;
+                    string mapId = map.Name.Length == 9
+                        ? map.Name
+                        : WzInfoTools.AddLeadingZeros(map.Name, 9);
+                    _infoManager.MapsNameCache[mapId] = mapName == null
+                        ? new Tuple<string, string, string>("NO NAME", "NO NAME", "NO NAME")
+                        : new Tuple<string, string, string>(
+                            streetName?.Value ?? string.Empty,
+                            mapName.Value,
+                            map.Parent.Name);
+                }
             }
         }
 

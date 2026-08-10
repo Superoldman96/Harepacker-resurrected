@@ -18,6 +18,7 @@ namespace HaCreator.GUI.InstanceEditor
         public LoadNpcSelector()
         {
             InitializeComponent();
+            Program.InfoManager.EnsureStringData();
             itemNames.AddRange(Program.InfoManager.NpcNameCache.Select(item =>
                 $"[{item.Key}] - {item.Value.Item1}{(string.IsNullOrEmpty(item.Value.Item2) ? string.Empty : $" ({item.Value.Item2})")}").OrderBy(item => item));
             SelectorDialogSupport.Filter(resultsList, itemNames, string.Empty);

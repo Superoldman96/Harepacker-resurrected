@@ -41,6 +41,7 @@ namespace HaCreator.Wz
 
         public Dictionary<string, BgmEntry> BGMs = new Dictionary<string, BgmEntry>();
         private IAudioAssetCatalog audioCatalog;
+        private readonly object deferredExtractionLock = new();
 
         /// <summary>Shared Sound catalog projection used by map and AI code.</summary>
         public IAudioAssetCatalog AudioCatalog
@@ -316,13 +317,11 @@ namespace HaCreator.Wz
 
             if (!BGMs.TryGetValue(name, out var entry))
             {
-                RefreshAudioCatalogProjection();
-                if (!BGMs.TryGetValue(name, out entry))
-                {
-                    AudioAssetEntry catalogEntry = AudioCatalog?.Find(name);
-                    if (catalogEntry != null)
-                        entry = new BgmEntry(catalogEntry.ImagePath, catalogEntry.PropertyPath);
-                }
+                if (!TryResolveBgmPath(name, out string imagePath, out string propertyPath))
+                    return null;
+
+                entry = new BgmEntry(imagePath, propertyPath);
+                BGMs[name] = entry;
             }
             if (entry == null)
                 return null;
@@ -333,7 +332,143 @@ namespace HaCreator.Wz
             if (image == null)
                 return null;
 
-            return image.GetFromPath(entry.PropertyPath) as WzBinaryProperty;
+            WzImageProperty property = image.GetFromPath(entry.PropertyPath);
+            if (property is WzBinaryProperty binary)
+                return binary;
+            try
+            {
+                return property?.GetLinkedWzImageProperty() as WzBinaryProperty;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Splits legacy paths such as Bgm00/FloralLife and canonical paths
+        /// such as Sound/Bgm00.img/FloralLife without building the global
+        /// Sound catalogue.
+        /// </summary>
+        internal static bool TryResolveBgmPath(string name, out string imagePath, out string propertyPath)
+        {
+            imagePath = null;
+            propertyPath = null;
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+
+            string[] segments = name.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            int first = segments.Length > 0 &&
+                string.Equals(segments[0], "Sound", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+            if (segments.Length - first < 2)
+                return false;
+
+            int imageEnd = Array.FindIndex(segments, first,
+                segment => segment.EndsWith(".img", StringComparison.OrdinalIgnoreCase));
+            if (imageEnd < first)
+                imageEnd = first;
+            if (imageEnd >= segments.Length - 1)
+                return false;
+
+            imagePath = string.Join('/', segments.Skip(first).Take(imageEnd - first + 1));
+            if (!imagePath.EndsWith(".img", StringComparison.OrdinalIgnoreCase))
+                imagePath += ".img";
+            propertyPath = string.Join('/', segments.Skip(imageEnd + 1));
+            return propertyPath.Length > 0;
+        }
+
+        /// <summary>
+        /// Gets one reactor definition on demand.  Startup keeps only reactor
+        /// IDs; image metadata and canvas data are loaded when a map or picker
+        /// actually uses that ID.
+        /// </summary>
+        public ReactorInfo GetReactor(string reactorId)
+        {
+            if (string.IsNullOrWhiteSpace(reactorId))
+                return null;
+            if (Reactors.TryGetValue(reactorId, out ReactorInfo cached))
+                return cached;
+
+            string imageName = WzInfoTools.AddLeadingZeros(reactorId, 7) + ".img";
+            WzImage image = Program.FindImage("Reactor", imageName);
+            if (image == null)
+                return null;
+
+            image.ParseImage();
+            WzSubProperty info = image["info"] as WzSubProperty;
+            string name = (info?["info"] as WzStringProperty)?.Value ??
+                (info?["viewName"] as WzStringProperty)?.Value ?? string.Empty;
+            var result = new ReactorInfo(null, new System.Drawing.Point(), reactorId, name, image);
+            lock (Reactors)
+            {
+                if (Reactors.TryGetValue(reactorId, out cached))
+                    return cached;
+                Reactors[reactorId] = result;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Enumerates reactor IDs without parsing reactor IMG files.
+        /// </summary>
+        public IEnumerable<string> GetReactorIds()
+        {
+            var ids = new HashSet<string>(Reactors.Keys, StringComparer.OrdinalIgnoreCase);
+            if (Program.DataSource != null)
+            {
+                foreach (string name in Program.DataSource.GetImageNamesInDirectory("Reactor", string.Empty))
+                {
+                    string id = WzInfoTools.RemoveExtension(name);
+                    if (!string.IsNullOrWhiteSpace(id))
+                        ids.Add(id);
+                }
+            }
+            return ids;
+        }
+
+        public IEnumerable<string> GetMobIds() => GetImageIds("Mob", MobNameCache.Keys);
+
+        public IEnumerable<string> GetNpcIds() => GetImageIds("Npc", NpcNameCache.Keys);
+
+        private IEnumerable<string> GetImageIds(string category, IEnumerable<string> cachedIds)
+        {
+            var ids = new HashSet<string>(cachedIds, StringComparer.OrdinalIgnoreCase);
+            if (Program.DataSource != null)
+            {
+                foreach (string name in Program.DataSource.GetImageNamesInDirectory(category, string.Empty))
+                {
+                    string id = WzInfoTools.RemoveExtension(name).TrimStart('0');
+                    if (id.Length == 0)
+                        id = "0";
+                    ids.Add(id);
+                }
+            }
+            return ids;
+        }
+
+        /// <summary>Loads all localized selector names only when a selector needs them.</summary>
+        public void EnsureStringData()
+        {
+            if (Program.DataSource == null ||
+                (NpcNameCache.Count != 0 && MobNameCache.Count != 0 &&
+                 SkillNameCache.Count != 0 && ItemNameCache.Count != 0))
+                return;
+            lock (deferredExtractionLock)
+            {
+                new ImgDataExtractor(Program.DataSource, this).ExtractStringData();
+            }
+        }
+
+        /// <summary>Loads quest metadata when the Quest editor is opened.</summary>
+        public void EnsureQuestData()
+        {
+            if (Program.DataSource == null || QuestInfos.Count != 0)
+                return;
+            lock (deferredExtractionLock)
+            {
+                if (QuestInfos.Count == 0)
+                    new ImgDataExtractor(Program.DataSource, this).ExtractQuestData();
+            }
         }
 
         /// <summary>

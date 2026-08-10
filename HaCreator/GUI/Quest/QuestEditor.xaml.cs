@@ -50,6 +50,7 @@ namespace HaCreator.GUI.Quest
             {
                 DataContext = this;
 
+                Program.InfoManager.EnsureQuestData();
                 LoadQuestsData();
             }
             finally
