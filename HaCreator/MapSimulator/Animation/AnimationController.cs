@@ -16,6 +16,7 @@ namespace HaCreator.MapSimulator.Animation
         private List<IDXObject> _currentFrames;
         private int _currentFrameIndex;
         private int _lastFrameSwitchTime;
+        private int _elapsedInCurrentFrameMs;
         private bool _isPlayingOnce;      // Animation plays once then stops
         private bool _animationCompleted; // Animation has completed (for one-shot animations)
 
@@ -48,6 +49,7 @@ namespace HaCreator.MapSimulator.Animation
             _currentFrames = animationSet.GetFrames(initialAction);
             _currentFrameIndex = 0;
             _lastFrameSwitchTime = 0;
+            _elapsedInCurrentFrameMs = 0;
             _isPlayingOnce = false;
             _animationCompleted = false;
         }
@@ -152,6 +154,7 @@ namespace HaCreator.MapSimulator.Animation
             _currentFrames = newFrames;
             _currentFrameIndex = 0;
             _lastFrameSwitchTime = 0; // Reset timing
+            _elapsedInCurrentFrameMs = 0;
             _isPlayingOnce = playOnce;
             _animationCompleted = false;
             _transitionAction = null;
@@ -167,6 +170,7 @@ namespace HaCreator.MapSimulator.Animation
         {
             _currentFrameIndex = 0;
             _lastFrameSwitchTime = 0;
+            _elapsedInCurrentFrameMs = 0;
             _animationCompleted = false;
         }
 
@@ -222,8 +226,40 @@ namespace HaCreator.MapSimulator.Animation
             if (tickCount - _lastFrameSwitchTime < delay)
                 return false;
 
-            // Advance to next frame
             _lastFrameSwitchTime = tickCount;
+            return AdvanceFrame();
+        }
+
+        /// <summary>
+        /// Advances animation from an update-loop delta rather than a render
+        /// timestamp. This keeps entity animation progressing when rendering
+        /// is throttled, skipped, or decoupled from game updates.
+        /// </summary>
+        public bool UpdateElapsed(int deltaTimeMs)
+        {
+            if (_currentFrames == null || _currentFrames.Count == 0 ||
+                (_isPlayingOnce && _animationCompleted))
+                return false;
+
+            _elapsedInCurrentFrameMs += Math.Max(0, deltaTimeMs);
+            bool changed = false;
+            int advancesRemaining = Math.Max(1, _currentFrames.Count);
+            while (advancesRemaining-- > 0)
+            {
+                int delay = GetCurrentFrameDelay();
+                if (_elapsedInCurrentFrameMs < delay)
+                    break;
+
+                _elapsedInCurrentFrameMs -= delay;
+                changed |= AdvanceFrame();
+                if (_isPlayingOnce && _animationCompleted)
+                    break;
+            }
+            return changed;
+        }
+
+        private bool AdvanceFrame()
+        {
             int previousIndex = _currentFrameIndex;
             _currentFrameIndex++;
 

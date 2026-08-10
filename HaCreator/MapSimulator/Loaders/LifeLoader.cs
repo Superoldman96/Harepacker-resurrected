@@ -3185,10 +3185,32 @@ namespace HaCreator.MapSimulator.Loaders
                 }
             }
 
+            // HaEditor animates map NPCs from LinkedWzImage["stand"] directly.
+            // Use the identical source and frame materializer for MapSimulator's
+            // idle action; client action-set selection remains responsible for
+            // conditional and special actions only.
+            WzImageProperty editorStandProperty = npcInfo.LinkedWzImage?[AnimationKeys.Stand];
+            if (editorStandProperty != null)
+            {
+                List<IDXObject> editorStandFrames = MapSimulatorLoader.LoadFrames(
+                    texturePool,
+                    editorStandProperty,
+                    npcInstance.X,
+                    npcInstance.Y,
+                    device,
+                    usedProps,
+                    fallbackDelay: NpcClientActionSetLoader.DefaultNpcFrameDelay);
+                if (editorStandFrames.Count > 0)
+                {
+                    animationSet.AddAnimation(AnimationKeys.Stand, editorStandFrames);
+                }
+            }
+
             NameTooltipItem nameTooltip = null;
             NameTooltipItem npcDescTooltip = null;
             if (includeTooltips)
             {
+                Program.InfoManager?.EnsureNpcStringData();
                 System.Drawing.Color color_foreGround = System.Drawing.Color.FromArgb(255, 255, 255, 0); // gold npc foreground color
 
                 nameTooltip = MapSimulatorLoader.CreateNPCMobNameTooltip(

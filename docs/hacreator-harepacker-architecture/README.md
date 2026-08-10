@@ -247,7 +247,8 @@ and the [MapleStory V overview](https://maplestory.fandom.com/wiki/MapleStory:_V
 - MapInfo is created when a map opens.
 - A map's BGM path resolves directly to its owning Sound IMG and property. The complete audio catalogue is built only by explicit catalogue/browse workflows.
 - Reactor definitions load from IDs referenced by the opened map. Mob/NPC assets load from that map, and skill assets load for the active character.
-- Startup reads only `String/Map.img`. Other localized String catalogues and Quest metadata load when their selectors or editors open.
+- Startup reads only `String/Map.img`. MapSimulator loads `String/Npc.img` when it first builds NPC tooltips; other localized String catalogues and Quest metadata load when their selectors or editors open.
+- MapSimulator advances NPC animation from update-loop elapsed time; drawing only renders the frame selected by the animation controller.
 
 ### Memory Usage Comparison
 

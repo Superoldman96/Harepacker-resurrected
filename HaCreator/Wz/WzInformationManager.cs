@@ -459,6 +459,18 @@ namespace HaCreator.Wz
             }
         }
 
+        /// <summary>Loads only localized NPC names when map NPC tooltips need them.</summary>
+        public void EnsureNpcStringData()
+        {
+            if (Program.DataSource == null || NpcNameCache.Count != 0)
+                return;
+            lock (deferredExtractionLock)
+            {
+                if (NpcNameCache.Count == 0)
+                    new ImgDataExtractor(Program.DataSource, this).ExtractNpcStringData();
+            }
+        }
+
         /// <summary>Loads quest metadata when the Quest editor is opened.</summary>
         public void EnsureQuestData()
         {

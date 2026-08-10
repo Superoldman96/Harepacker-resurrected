@@ -86,8 +86,22 @@ namespace HaCreator.Wz
                 _infoManager.ItemNameCache.Count != 0)
                 return;
 
-            // NPC strings
-            var npcImg = _dataSource.GetImage("String", "Npc.img");
+            ExtractNpcStringData();
+            ExtractMapStringData();
+            ExtractRemainingStringData();
+        }
+
+        /// <summary>
+        /// Loads only localized NPC names and descriptions. MapSimulator uses
+        /// this when it first builds an NPC tooltip so the rest of String data
+        /// remains deferred.
+        /// </summary>
+        public void ExtractNpcStringData()
+        {
+            if (_infoManager.NpcNameCache.Count != 0)
+                return;
+
+            WzImage npcImg = _dataSource.GetImage("String", "Npc.img");
             if (npcImg != null)
             {
                 npcImg.ParseImage();
@@ -101,35 +115,10 @@ namespace HaCreator.Wz
                         _infoManager.NpcNameCache[npcId] = new Tuple<string, string>(npcName, npcFunc);
                 }
             }
+        }
 
-            // Map strings
-            var mapImg = _dataSource.GetImage("String", "Map.img");
-            if (mapImg != null)
-            {
-                mapImg.ParseImage();
-                foreach (WzSubProperty mapCat in mapImg.WzProperties)
-                {
-                    foreach (WzSubProperty map in mapCat.WzProperties)
-                    {
-                        WzStringProperty streetNameProp = (WzStringProperty)map["streetName"];
-                        WzStringProperty mapNameProp = (WzStringProperty)map["mapName"];
-
-                        string mapIdStr = map.Name.Length == 9 ? map.Name : WzInfoTools.AddLeadingZeros(map.Name, 9);
-                        string categoryName = map.Parent.Name;
-
-                        if (mapNameProp == null)
-                            _infoManager.MapsNameCache[mapIdStr] = new Tuple<string, string, string>("NO NAME", "NO NAME", "NO NAME");
-                        else
-                        {
-                            _infoManager.MapsNameCache[mapIdStr] = new Tuple<string, string, string>(
-                                streetNameProp?.Value ?? string.Empty,
-                                mapNameProp.Value,
-                                categoryName);
-                        }
-                    }
-                }
-            }
-
+        private void ExtractRemainingStringData()
+        {
             // Mob strings
             var mobImg = _dataSource.GetImage("String", "Mob.img");
             if (mobImg != null)
