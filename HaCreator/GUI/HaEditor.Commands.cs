@@ -43,6 +43,7 @@ namespace HaCreator.GUI
         public static readonly RoutedUICommand PhysicsEdit = CreateCommand(nameof(PhysicsEdit));
         public static readonly RoutedUICommand ShowQuestEditorWindow = CreateCommand(nameof(ShowQuestEditorWindow));
         public static readonly RoutedUICommand ShowAnimationEditorWindow = CreateCommand(nameof(ShowAnimationEditorWindow));
+        public static readonly RoutedUICommand ShowSkillEditorWindow = CreateCommand(nameof(ShowSkillEditorWindow));
         public static readonly RoutedUICommand ShowCutsceneEditorWindow = CreateCommand(nameof(ShowCutsceneEditorWindow));
         public static readonly RoutedUICommand ShowWorldMapEditorWindow = CreateCommand(nameof(ShowWorldMapEditorWindow));
         public static readonly RoutedUICommand ShowMapProperties = CreateCommand(nameof(ShowMapProperties));
@@ -76,6 +77,7 @@ namespace HaCreator.GUI
         private void PhysicsEdit_Executed(object sender, ExecutedRoutedEventArgs e) => MapPhysicsClicked?.Invoke();
         private void ShowQuestEditorWindow_Executed(object sender, ExecutedRoutedEventArgs e) => ShowQuestEditorWindowClicked?.Invoke();
         private void ShowAnimationEditorWindow_Executed(object sender, ExecutedRoutedEventArgs e) => ShowAnimationEditorWindowClicked?.Invoke();
+        private void ShowSkillEditorWindow_Executed(object sender, ExecutedRoutedEventArgs e) => ShowSkillEditorWindowClicked?.Invoke();
         private void ShowCutsceneEditorWindow_Executed(object sender, ExecutedRoutedEventArgs e) => ShowCutsceneEditorWindowClicked?.Invoke();
         private void ShowWorldMapEditorWindow_Executed(object sender, ExecutedRoutedEventArgs e) => ShowWorldMapEditorWindowClicked?.Invoke();
         private void ShowMapProperties_Executed(object sender, ExecutedRoutedEventArgs e) => ShowMapPropertiesClicked?.Invoke();
@@ -299,6 +301,7 @@ namespace HaCreator.GUI
         public event EmptyEvent MapPhysicsClicked;
         public event EmptyEvent ShowQuestEditorWindowClicked;
         public event EmptyEvent ShowAnimationEditorWindowClicked;
+        public event EmptyEvent ShowSkillEditorWindowClicked;
         public event EmptyEvent ShowCutsceneEditorWindowClicked;
         public event EmptyEvent ShowWorldMapEditorWindowClicked;
         public event EmptyEvent ShowMapPropertiesClicked;

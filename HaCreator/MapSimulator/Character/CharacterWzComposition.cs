@@ -28,6 +28,8 @@ namespace HaCreator.MapSimulator.Character
         public int ZIndex { get; }
     }
 
+    public sealed record CharacterWzActionFrame(string Key, int Delay, bool Flip, IReadOnlyList<CharacterWzLayer> Layers);
+
     /// <summary>
     /// Shared character layout rules used by MapSimulator and WZ-backed previews.
     /// This class does not allocate textures or depend on a graphics device.
@@ -136,6 +138,19 @@ namespace HaCreator.MapSimulator.Character
             WzImage hairImage,
             IEnumerable<(int ItemId, WzImage Image)> equipmentImages)
         {
+            return ComposeAction(bodyImage, headImage, faceImage, hairImage, equipmentImages, "stand1", "0");
+        }
+
+        /// <summary>Composes an ordinary, unmounted character action without requiring a graphics device.</summary>
+        public static IReadOnlyList<CharacterWzLayer> ComposeAction(
+            WzImage bodyImage,
+            WzImage headImage,
+            WzImage faceImage,
+            WzImage hairImage,
+            IEnumerable<(int ItemId, WzImage Image)> equipmentImages,
+            string action,
+            string frameKey)
+        {
             List<CharacterWzLayer> layers = new();
             if (bodyImage == null || headImage == null)
                 return layers;
@@ -145,9 +160,12 @@ namespace HaCreator.MapSimulator.Character
             Parse(faceImage);
             Parse(hairImage);
 
-            WzImageProperty bodyFrame = bodyImage.GetFromPath("stand1/0");
+            action = string.IsNullOrWhiteSpace(action) ? "stand1" : action;
+            frameKey = string.IsNullOrWhiteSpace(frameKey) ? "0" : frameKey;
+            WzImageProperty bodyFrame = bodyImage.GetFromPath($"{action}/{frameKey}") ?? bodyImage.GetFromPath("stand1/0");
             WzCanvasProperty body = GetCanvas(bodyFrame?["body"]) ?? GetCanvas(bodyFrame);
             WzCanvasProperty head = GetCanvas(headImage.GetFromPath("front/head"))
+                ?? GetCanvas(headImage.GetFromPath($"{action}/{frameKey}/head"))
                 ?? GetCanvas(headImage.GetFromPath("stand1/0/head"));
             if (body == null || head == null)
                 return layers;
@@ -169,9 +187,27 @@ namespace HaCreator.MapSimulator.Character
             AddFaceAndHair(layers, head, headOffset, faceImage, hairImage);
 
             foreach ((int itemId, WzImage image) in equipmentImages ?? Enumerable.Empty<(int, WzImage)>())
-                AddEquipment(layers, itemId, image, bodyMap, GetOrigin(body), baseOffset, headMap, headOffset, GetOrigin(head));
+                AddEquipment(layers, itemId, image, bodyMap, GetOrigin(body), baseOffset, headMap, headOffset, GetOrigin(head), action, frameKey);
 
             return layers;
+        }
+
+        public static IReadOnlyList<CharacterWzActionFrame> ComposeActionFrames(
+            WzImage bodyImage, WzImage headImage, WzImage faceImage, WzImage hairImage,
+            IEnumerable<(int ItemId, WzImage Image)> equipmentImages, string action)
+        {
+            if (bodyImage == null) return Array.Empty<CharacterWzActionFrame>();
+            Parse(bodyImage);
+            WzImageProperty actionNode = bodyImage[action];
+            if (actionNode?.WzProperties == null) return Array.Empty<CharacterWzActionFrame>();
+            var result = new List<CharacterWzActionFrame>();
+            foreach (WzImageProperty frame in actionNode.WzProperties.Where(property => int.TryParse(property.Name, out _)))
+            {
+                int delay = (frame["delay"] as WzIntProperty)?.Value ?? 100;
+                bool flip = (frame["flip"] as WzIntProperty)?.Value != 0;
+                result.Add(new(frame.Name, delay, flip, ComposeAction(bodyImage, headImage, faceImage, hairImage, equipmentImages, action, frame.Name)));
+            }
+            return result;
         }
 
         public static string GetEquipmentFolder(int itemId)
@@ -349,14 +385,19 @@ namespace HaCreator.MapSimulator.Character
             Point baseOffset,
             IReadOnlyDictionary<string, Point> headMap,
             Point headOffset,
-            Point headOrigin)
+            Point headOrigin,
+            string action,
+            string frameKey)
         {
             string folder = GetEquipmentFolder(itemId);
             if (image == null || folder == null)
                 return;
 
             Parse(image);
-            WzImageProperty frame = image.GetFromPath("stand1/0") ?? image.GetFromPath("default");
+            WzImageProperty frame = image.GetFromPath($"{action}/{frameKey}")
+                ?? image.GetFromPath($"{action}/0")
+                ?? image.GetFromPath("stand1/0")
+                ?? image.GetFromPath("default");
             if (frame == null)
                 return;
 
