@@ -209,6 +209,32 @@ public sealed class SkillCacheAndLeaseTests
 public sealed class SkillEditorUiSmokeTests
 {
     [Fact]
+    public void FormulaRawColumnsUseOneWayBindingsForTransactionalEdits()
+    {
+        Exception failure = null;
+        Thread thread = new(() =>
+        {
+            try
+            {
+                _ = System.Windows.Application.Current ?? new System.Windows.Application();
+                var window = new SkillEditor(new MemoryDataSource(new MapleLib.Img.VersionInfo { Version = "ui-formula-binding" }));
+                foreach (string gridName in new[] { "commonGrid", "pvpGrid" })
+                {
+                    var grid = Assert.IsType<System.Windows.Controls.DataGrid>(window.FindName(gridName));
+                    var column = Assert.IsType<System.Windows.Controls.DataGridTextColumn>(grid.Columns[2]);
+                    var binding = Assert.IsType<System.Windows.Data.Binding>(column.Binding);
+                    Assert.Equal(System.Windows.Data.BindingMode.OneWay, binding.Mode);
+                }
+                window.Close();
+            }
+            catch (Exception exception) { failure = exception; }
+        });
+        thread.SetApartmentState(ApartmentState.STA); thread.Start();
+        Assert.True(thread.Join(TimeSpan.FromSeconds(30)), "WPF formula-binding test thread timed out.");
+        if (failure != null) throw new Xunit.Sdk.XunitException(failure.ToString());
+    }
+
+    [Fact]
     public void WindowCreatesAndLaysOutAtMinimumSizeAcrossLocalesAndDpiScales()
     {
         Exception failure = null;
