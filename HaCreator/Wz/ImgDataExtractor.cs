@@ -432,6 +432,57 @@ namespace HaCreator.Wz
                 foreach (WzImageProperty prop in sayImg.WzProperties)
                     _infoManager.QuestSays.Add(prop.Name, prop as WzSubProperty);
             }
+
+            // Recent clients store one quest per image under Quest/QuestData instead
+            // of the four legacy aggregate images above. Merge any such images so
+            // mixed layouts also work without relying on a client version check.
+            IEnumerable<WzImage> questDataImages = GetQuestDataImages();
+            foreach (WzImage questImg in questDataImages)
+            {
+                if (questImg == null)
+                    continue;
+
+                questImg.ParseImage();
+
+                string questId = WzInfoTools.RemoveExtension(questImg.Name);
+                AddQuestDataProperty(_infoManager.QuestInfos, questId, questImg["QuestInfo"]);
+                AddQuestDataProperty(_infoManager.QuestActs, questId, questImg["Act"]);
+                AddQuestDataProperty(_infoManager.QuestChecks, questId, questImg["Check"]);
+                AddQuestDataProperty(_infoManager.QuestSays, questId, questImg["Say"]);
+            }
+        }
+
+        private IEnumerable<WzImage> GetQuestDataImages()
+        {
+            if (_dataSource is not ImgFileSystemDataSource)
+                return _dataSource.GetImagesInDirectory("Quest", "QuestData");
+
+            // Newer clients contain tens of thousands of small quest images. The
+            // IMG filesystem cache is thread-safe, and bounded parallel reads avoid
+            // making the editor appear hung while opening every file serially.
+            string[] questIds = _dataSource
+                .GetImageNamesInDirectory("Quest", "QuestData")
+                .ToArray();
+            WzImage[] questImages = new WzImage[questIds.Length];
+
+            Parallel.For(
+                0,
+                questIds.Length,
+                new ParallelOptions { MaxDegreeOfParallelism = 4 },
+                index => questImages[index] = _dataSource.GetImage(
+                    "Quest",
+                    $"QuestData/{questIds[index]}.img"));
+
+            return questImages;
+        }
+
+        private static void AddQuestDataProperty(
+            Dictionary<string, WzSubProperty> destination,
+            string questId,
+            WzObject property)
+        {
+            if (property is WzSubProperty subProperty && !destination.ContainsKey(questId))
+                destination.Add(questId, subProperty);
         }
 
         /// <summary>
