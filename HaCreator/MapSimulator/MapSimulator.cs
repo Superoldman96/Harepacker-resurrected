@@ -38599,12 +38599,7 @@ namespace HaCreator.MapSimulator
                     for (int i = 0; i < layerItems.Length; i++)
                     {
                         BaseDXDrawableItem item = layerItems[i];
-                        IDXObject frame = item.LastFrameDrawn ?? item.Frame0;
-                        if (frame != null)
-                        {
-                            // Use frame position as object position
-                            _mapObjectsGrid.Add(item, frame.X, frame.Y);
-                        }
+                        IndexMapObjectForSpatialQueries(_mapObjectsGrid, item);
                     }
                 }
             }
@@ -38637,6 +38632,19 @@ namespace HaCreator.MapSimulator
             var (totalCells, occupiedCells, maxPerCell) = _mapObjectsGrid.GetStats();
             System.Diagnostics.Debug.WriteLine($"Spatial partitioning enabled: {totalStaticObjects} objects, {totalCells} cells ({occupiedCells} occupied), max {maxPerCell}/cell");
 #endif
+        }
+
+
+        internal static void IndexMapObjectForSpatialQueries(
+            SpatialGrid<BaseDXDrawableItem> mapObjectsGrid,
+            BaseDXDrawableItem item)
+        {
+            if (mapObjectsGrid == null || item == null)
+            {
+                return;
+            }
+
+            mapObjectsGrid.Add(item, item.GetWorldBounds());
         }
 
 

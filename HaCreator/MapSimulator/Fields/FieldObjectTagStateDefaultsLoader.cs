@@ -258,7 +258,7 @@ namespace HaCreator.MapSimulator.Fields
                     return ParseBoolText(stringProperty.Value);
             }
 
-            return ParseBoolText(property.GetString());
+            return null;
         }
 
         private static string ReadString(WzImageProperty property)
@@ -287,7 +287,7 @@ namespace HaCreator.MapSimulator.Fields
                     return doubleProperty.Value.ToString(CultureInfo.InvariantCulture);
             }
 
-            return property.GetString();
+            return null;
         }
 
         private static bool? ParseBoolText(string value)

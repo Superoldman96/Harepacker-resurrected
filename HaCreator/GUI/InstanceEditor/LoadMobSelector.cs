@@ -18,6 +18,7 @@ namespace HaCreator.GUI.InstanceEditor
         public LoadMobSelector()
         {
             InitializeComponent();
+            Program.InfoManager.EnsureStringData();
             itemNames.AddRange(Program.InfoManager.MobNameCache.Select(item => $"[{item.Key}] - {item.Value}").OrderBy(item => item));
             SelectorDialogSupport.Filter(resultsList, itemNames, string.Empty);
             Closing += (_, _) => { if (!accepted) SelectedMonsterId = 0; };

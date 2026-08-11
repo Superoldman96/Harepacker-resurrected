@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest_AudioEditor", "Uni
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest_WorldMapEditor", "UnitTest_WorldMapEditor\UnitTest_WorldMapEditor.csproj", "{BB7AAD54-3503-41E1-920C-F9308909E2D9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest_SkillEditor", "UnitTest_SkillEditor\UnitTest_SkillEditor.csproj", "{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -361,6 +363,30 @@ Global
 		{BB7AAD54-3503-41E1-920C-F9308909E2D9}.Release|x64.Build.0 = Release|Any CPU
 		{BB7AAD54-3503-41E1-920C-F9308909E2D9}.Release|x86.ActiveCfg = Release|Any CPU
 		{BB7AAD54-3503-41E1-920C-F9308909E2D9}.Release|x86.Build.0 = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|ARM.Build.0 = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|Win32.Build.0 = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|x64.Build.0 = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Debug|x86.Build.0 = Debug|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|ARM.ActiveCfg = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|ARM.Build.0 = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|ARM64.Build.0 = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|Win32.ActiveCfg = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|Win32.Build.0 = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|x64.ActiveCfg = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|x64.Build.0 = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|x86.ActiveCfg = Release|Any CPU
+		{AA8D2169-B0A8-41E0-B036-5F9622FC2F7D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

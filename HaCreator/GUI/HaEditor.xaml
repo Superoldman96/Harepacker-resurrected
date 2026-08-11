@@ -12,6 +12,7 @@
         xmlns:cutscene="clr-namespace:HaCreator.GUI.Cutscene"
         xmlns:audio="clr-namespace:HaCreator.GUI.Audio"
         xmlns:world="clr-namespace:HaCreator.GUI.WorldMap"
+        xmlns:skill="clr-namespace:HaCreator.GUI.Skill"
 
         mc:Ignorable="d" 
         d:DesignHeight="721" d:DesignWidth="1111" 
@@ -45,6 +46,7 @@
         <CommandBinding Command="{x:Static local:HaEditor.PhysicsEdit}" CanExecute="AlwaysExecute" Executed="PhysicsEdit_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowQuestEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowQuestEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowAnimationEditorWindow_Executed"/>
+        <CommandBinding Command="{x:Static local:HaEditor.ShowSkillEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowSkillEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowCutsceneEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}" CanExecute="AlwaysExecute" Executed="ShowWorldMapEditorWindow_Executed"/>
         <CommandBinding Command="{x:Static local:HaEditor.ShowMapProperties}" CanExecute="AlwaysExecute" Executed="ShowMapProperties_Executed"/>
@@ -379,6 +381,7 @@
                         <MenuItem Header="{loc:Loc Editor_New_platform_D53525}" Command="{x:Static local:HaEditor.NewPlatform}"/>
                         <MenuItem Header="{loc:Loc Editor_Quest_editor_A8BFA2}" Command="{x:Static local:HaEditor.ShowQuestEditorWindow}"/>
                         <MenuItem Header="{loc:Loc Editor_Animation_editor_6F43C2}" Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}"/>
+                        <MenuItem Header="{skill:SkillEditorText Title}" Command="{x:Static local:HaEditor.ShowSkillEditorWindow}"/>
                         <MenuItem Header="{cutscene:CutsceneEditorText Cutscene_Title}" Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}"/>
                         <MenuItem Header="{audio:AudioWorkspaceText Title}" Click="ShowAudioStudio_Click"/>
                         <MenuItem Header="{world:WorldMapEditorText Title}" Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}"/>
@@ -391,6 +394,7 @@
                         <MenuItem Header="{loc:Loc Editor_Manage_User_Objects_455E55}" Command="{x:Static local:HaEditor.UserObjs}"/>
                         <MenuItem Header="{loc:Loc Editor_Quest_editor_B81784}" Command="{x:Static local:HaEditor.ShowQuestEditorWindow}"/>
                         <MenuItem Header="{loc:Loc Editor_Animation_editor_6F43C2}" Command="{x:Static local:HaEditor.ShowAnimationEditorWindow}"/>
+                        <MenuItem Header="{skill:SkillEditorText Title}" Command="{x:Static local:HaEditor.ShowSkillEditorWindow}"/>
                         <MenuItem Header="{cutscene:CutsceneEditorText Cutscene_Title}" Command="{x:Static local:HaEditor.ShowCutsceneEditorWindow}"/>
                         <MenuItem Header="{world:WorldMapEditorText Title}" Command="{x:Static local:HaEditor.ShowWorldMapEditorWindow}"/>
                     </MenuItem>
@@ -448,6 +452,16 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE7FC;"/>
                             <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{loc:Loc Editor_Animations_2D94A1}"/>
+                        </Grid>
+                    </Button>
+                    <Button Style="{StaticResource WorkspaceCommandButtonStyle}"
+                            Command="{x:Static local:HaEditor.ShowSkillEditorWindow}"
+                            ToolTip="{skill:SkillEditorText Title}"
+                            AutomationProperties.Name="{skill:SkillEditorText Title}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe MDL2 Assets" FontSize="15" Text="&#xE8D4;"/>
+                            <TextBlock Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center" Text="{skill:SkillEditorText CommandLabel}"/>
                         </Grid>
                     </Button>
                     <Button Style="{StaticResource WorkspaceCommandButtonStyle}"

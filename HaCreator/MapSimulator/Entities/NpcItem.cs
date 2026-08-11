@@ -409,6 +409,7 @@ namespace HaCreator.MapSimulator.Entities
             }
 
             UpdateTemporaryAction(deltaTimeMs);
+            _animationController?.UpdateElapsed(deltaTimeMs);
 
             // Update movement
             if (MovementEnabled && MovementInfo != null && MovementInfo.CanMove)
@@ -549,18 +550,12 @@ namespace HaCreator.MapSimulator.Entities
         }
 
         /// <summary>
-        /// Get the current animation frame based on time
+        /// Gets the frame selected by the update-loop animation controller.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private IDXObject GetCurrentAnimationFrame(int tickCount)
+        private IDXObject GetCurrentAnimationFrame()
         {
-            if (_animationController == null)
-                return null;
-
-            // Update the animation controller's frame
-            _animationController.UpdateFrame(tickCount);
-
-            return _animationController.GetCurrentFrame();
+            return _animationController?.GetCurrentFrame();
         }
 
         /// <summary>
@@ -596,7 +591,7 @@ namespace HaCreator.MapSimulator.Entities
             int adjustedMapShiftY = mapShiftY - positionOffsetY;
 
             // Get current frame from animation
-            IDXObject drawFrame = GetCurrentAnimationFrame(TickCount);
+            IDXObject drawFrame = GetCurrentAnimationFrame();
 
             AssembledFrame imitatedFrame = _imitatedAssembler?.GetFrameAtTime(ResolveImitatedAvatarAction(), TickCount)
                                            ?? _imitatedAssembler?.GetFrameAtTime(ResolveFallbackImitatedAvatarAction(), TickCount);

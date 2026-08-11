@@ -7,6 +7,7 @@ using HaCreator.GUI.InstanceEditor;
 using HaCreator.GUI.Quest;
 using HaCreator.GUI.FrameAnimation;
 using HaCreator.GUI.Cutscene;
+using HaCreator.GUI.Skill;
 using HaCreator.MapEditor.Info;
 using HaCreator.MapEditor.Input;
 using HaCreator.MapEditor.Instance;
@@ -110,6 +111,7 @@ namespace HaCreator.MapEditor
             // Etc
             this.editorShell.ShowQuestEditorWindowClicked += Ribbon_ShowQuestEditorWindowClicked;
             this.editorShell.ShowAnimationEditorWindowClicked += Ribbon_ShowAnimationEditorWindowClicked;
+            this.editorShell.ShowSkillEditorWindowClicked += Ribbon_ShowSkillEditorWindowClicked;
             this.editorShell.ShowCutsceneEditorWindowClicked += Ribbon_ShowCutsceneEditorWindowClicked;
             //
 
@@ -555,6 +557,15 @@ namespace HaCreator.MapEditor
                 Owner = editorShell
             };
             animationEditor.ShowDialog();
+        }
+
+        private void Ribbon_ShowSkillEditorWindowClicked()
+        {
+            SkillEditor skillEditor = new SkillEditor
+            {
+                Owner = editorShell
+            };
+            skillEditor.ShowDialog();
         }
 
         private void Ribbon_ShowCutsceneEditorWindowClicked()

@@ -19,6 +19,7 @@ namespace HaCreator.GUI.InstanceEditor
         public LoadSkillSelector(int filterSkillId)
         {
             InitializeComponent();
+            Program.InfoManager.EnsureStringData();
             this.filterSkillId = filterSkillId;
             foreach (KeyValuePair<string, Tuple<string, string>> item in Program.InfoManager.SkillNameCache)
                 if (int.TryParse(item.Key, out int id) && (filterSkillId == 0 || id / 10000 == filterSkillId))

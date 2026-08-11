@@ -50,6 +50,7 @@ namespace HaCreator.GUI.Quest
             {
                 DataContext = this;
 
+                Program.InfoManager.EnsureQuestData();
                 LoadQuestsData();
             }
             finally
@@ -1865,7 +1866,7 @@ namespace HaCreator.GUI.Quest
                                 // select any questInfo from the list, to get the CheckInfo parent directory
                                 WzImage anyQuestInfoParentImg = Program.InfoManager.QuestInfos.FirstOrDefault().Value.Parent as WzImage;
                                 // Set file updated
-                                Program.MarkImageUpdated("Quest", anyQuestInfoParentImg);
+                                MarkQuestImageUpdated(anyQuestInfoParentImg);
                             }
                         }
                     }
@@ -1876,6 +1877,20 @@ namespace HaCreator.GUI.Quest
                 {
                     string questId = kvp.Key;
                     var (info, say, act, check) = kvp.Value;
+
+                    if (UsesPerQuestStorage())
+                    {
+                        StorePerQuestData(questId, info, say, act, check);
+
+                        QuestEditorModel modernQuestModel = loadQuestImage(info, questId);
+                        _quests.Add(modernQuestModel);
+                        FilteredQuests.Add(modernQuestModel);
+
+                        SelectedQuest = modernQuestModel;
+                        listbox_Quest.SelectedItem = modernQuestModel;
+                        listbox_Quest.ScrollIntoView(modernQuestModel);
+                        continue;
+                    }
 
                     // Add quest info
                     if (info != null)
@@ -2020,18 +2035,30 @@ namespace HaCreator.GUI.Quest
                     {
                         questWzSubProp.AddProperty(new WzStringProperty("name", name));
 
-                        // select any questInfo from the list, to get the CheckInfo parent directory
-                        WzImage anyQuestInfoParentImg = Program.InfoManager.QuestInfos.FirstOrDefault().Value.Parent as WzImage;
+                        if (UsesPerQuestStorage())
+                        {
+                            StorePerQuestData(
+                                questId.ToString(),
+                                questWzSubProp,
+                                new WzSubProperty("Say"),
+                                new WzSubProperty("Act"),
+                                new WzSubProperty("Check"));
+                        }
+                        else
+                        {
+                            // select any questInfo from the list, to get the CheckInfo parent directory
+                            WzImage anyQuestInfoParentImg = Program.InfoManager.QuestInfos.FirstOrDefault().Value.Parent as WzImage;
 
-                        // replace the old 
-                        Program.InfoManager.QuestInfos[questId.ToString()] = questWzSubProp;
+                            // replace the old
+                            Program.InfoManager.QuestInfos[questId.ToString()] = questWzSubProp;
 
-                        // add back the newly created image
-                        anyQuestInfoParentImg.AddProperty(questWzSubProp);
+                            // add back the newly created image
+                            anyQuestInfoParentImg.AddProperty(questWzSubProp);
 
-                        // flag unsaved changes bool
-                        _unsavedChanges = true;
-                        Program.MarkImageUpdated("Quest", anyQuestInfoParentImg);
+                            // flag unsaved changes bool
+                            _unsavedChanges = true;
+                            MarkQuestImageUpdated(anyQuestInfoParentImg);
+                        }
 
 
                         // Navigate to this quest on the scrollviewer
@@ -2171,7 +2198,7 @@ namespace HaCreator.GUI.Quest
                 return;
 
             _unsavedChanges = true;
-            Program.MarkImageUpdated("Quest", changedImage);
+            MarkQuestImageUpdated(changedImage);
         }
 
         /// <summary>
@@ -3655,6 +3682,17 @@ namespace HaCreator.GUI.Quest
             WzSubProperty questAct_SubPropOriginal = Program.InfoManager.QuestActs.ContainsKey(quest.Id.ToString()) ? Program.InfoManager.QuestActs[quest.Id.ToString()] : null;
             WzSubProperty questCheck_SubPropOriginal = Program.InfoManager.QuestChecks.ContainsKey(quest.Id.ToString()) ? Program.InfoManager.QuestChecks[quest.Id.ToString()] : null;
 
+            if (IsPerQuestStorageImage(questWzSubProperty_original?.ParentImage))
+            {
+                StorePerQuestData(
+                    quest.Id.ToString(),
+                    questExportedProperties.Item1,
+                    questExportedProperties.Item2,
+                    questExportedProperties.Item3,
+                    questExportedProperties.Item4);
+                return;
+            }
+
             WzImage questInfoParentImg = resolveQuestParentImage(questWzSubProperty_original, Program.InfoManager.QuestInfos, "QuestInfo.img");
             WzImage questSayParentImg = resolveQuestParentImage(oldSayWzProp, Program.InfoManager.QuestSays, "Say.img");
             WzImage questActParentImg = resolveQuestParentImage(questAct_SubPropOriginal, Program.InfoManager.QuestActs, "Act.img");
@@ -4687,6 +4725,17 @@ namespace HaCreator.GUI.Quest
             // remove it off local collections
             _quests.Remove(_selectedQuest);
             FilteredQuests.Remove(_selectedQuest);
+
+            string questId = quest.Id.ToString();
+            if (Program.InfoManager.QuestInfos.TryGetValue(questId, out WzSubProperty modernQuestInfo)
+                && IsPerQuestStorageImage(modernQuestInfo?.ParentImage))
+            {
+                // Keep the standalone IMG as an empty, valid image. It will no
+                // longer be indexed as a quest because it has no QuestInfo root.
+                StorePerQuestData(questId, null, null, null, null);
+                SelectedQuest = null;
+                return;
+            }
 
             //////////////////
             /// Remove from QuestInfo.img

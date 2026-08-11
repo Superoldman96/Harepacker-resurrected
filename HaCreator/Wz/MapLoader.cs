@@ -400,7 +400,9 @@ namespace HaCreator.Wz
                 string name = InfoTool.GetOptionalString(reactor["name"]);
                 string id = InfoTool.GetString(reactor["id"]);
                 bool flip = InfoTool.GetBool(reactor["f"]);
-                mapBoard.BoardItems.Reactors.Add((ReactorInstance)Program.InfoManager.Reactors[id].CreateInstance(mapBoard, x, y, reactorTime, name, flip));
+                ReactorInfo reactorInfo = Program.InfoManager.GetReactor(id);
+                if (reactorInfo != null)
+                    mapBoard.BoardItems.Reactors.Add((ReactorInstance)reactorInfo.CreateInstance(mapBoard, x, y, reactorTime, name, flip));
             }
         }
 

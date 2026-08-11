@@ -85,6 +85,7 @@ Technical documentation for HaSuite internals.
 
 ### Architecture & Design
 - [AI Map Edit Window Redesign](docs/architecture/AIMapEditWindow-Chat-Redesign-Plan.md) - Chat interface redesign plan
+- [Skill Editor Architecture](docs/architecture/skill-editor.md) - Lazy catalog, detached editing, lossless WZ persistence, animation, and character preview
 
 ----
 

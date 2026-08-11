@@ -222,10 +222,6 @@ namespace HaCreator.GUI
                 };
 
                 extractor.ExtractAll();
-                // Keep the shared BGM compatibility projection available in
-                // IMG/hybrid mode, where the legacy WzManager extraction path
-                // is not used.
-                Program.InfoManager.RefreshAudioCatalogProjection();
 
                 // Set image format detection flag for pre-Big Bang compatibility
                 // DXT formats (Format3, Format1026, Format2050) are not supported by pre-BB clients

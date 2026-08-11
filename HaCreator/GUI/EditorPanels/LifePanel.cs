@@ -148,9 +148,7 @@ namespace HaCreator.GUI.EditorPanels
             {
                 MapleExtractableInfo info = entry.Type switch
                 {
-                    LifeEntryType.Reactor => Program.InfoManager.Reactors.TryGetValue(entry.Id, out ReactorInfo reactorInfo)
-                        ? reactorInfo
-                        : null,
+                    LifeEntryType.Reactor => Program.InfoManager.GetReactor(entry.Id),
                     LifeEntryType.Npc => NpcInfo.Get(entry.Id),
                     LifeEntryType.Mob => MobInfo.Get(entry.Id),
                     _ => null
@@ -209,7 +207,8 @@ namespace HaCreator.GUI.EditorPanels
                 switch (entry.Type)
                 {
                     case LifeEntryType.Reactor:
-                        if (!Program.InfoManager.Reactors.TryGetValue(entry.Id, out ReactorInfo reactorInfo))
+                        ReactorInfo reactorInfo = Program.InfoManager.GetReactor(entry.Id);
+                        if (reactorInfo == null)
                             return;
                         lifePreview.Source = ConvertBitmap(reactorInfo.Image);
                         hcsm.EnterEditMode(ItemTypes.Reactors);
@@ -301,24 +300,28 @@ namespace HaCreator.GUI.EditorPanels
         private void RefreshMobSource()
         {
             mobs.Clear();
-            mobs.AddRange(Program.InfoManager.MobNameCache.ToArray()
-                .Select(entry => new LifeEntry(entry.Key, $"{entry.Key} - {entry.Value}", LifeEntryType.Mob))
+            mobs.AddRange(Program.InfoManager.GetMobIds()
+                .Select(id => new LifeEntry(
+                    id,
+                    Program.InfoManager.MobNameCache.TryGetValue(id, out string name)
+                        ? $"{id} - {name}"
+                        : id,
+                    LifeEntryType.Mob))
                 .OrderBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase));
         }
 
         private void RefreshNpcSource()
         {
             npcs.Clear();
-            npcs.AddRange(Program.InfoManager.NpcNameCache.ToArray()
-                .Select(entry =>
+            npcs.AddRange(Program.InfoManager.GetNpcIds()
+                .Select(id =>
                 {
-                    string description = string.IsNullOrEmpty(entry.Value.Item2)
-                        ? string.Empty
-                        : $" ({entry.Value.Item2})";
-                    return new LifeEntry(
-                        entry.Key,
-                        $"{entry.Key} - {entry.Value.Item1}{description}",
-                        LifeEntryType.Npc);
+                    if (Program.InfoManager.NpcNameCache.TryGetValue(id, out var info))
+                    {
+                        string description = string.IsNullOrEmpty(info.Item2) ? string.Empty : $" ({info.Item2})";
+                        return new LifeEntry(id, $"{id} - {info.Item1}{description}", LifeEntryType.Npc);
+                    }
+                    return new LifeEntry(id, id, LifeEntryType.Npc);
                 })
                 .OrderBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase));
         }
@@ -326,13 +329,14 @@ namespace HaCreator.GUI.EditorPanels
         private void RefreshReactorSource()
         {
             reactors.Clear();
-            reactors.AddRange(Program.InfoManager.Reactors.ToArray()
-                .Select(entry =>
+            reactors.AddRange(Program.InfoManager.GetReactorIds()
+                .Select(id =>
                 {
-                    string name = string.IsNullOrEmpty(entry.Value.Name)
-                        ? entry.Value.ID
-                        : $"{entry.Value.ID} ({entry.Value.Name})";
-                    return new LifeEntry(entry.Key, name, LifeEntryType.Reactor);
+                    string name = Program.InfoManager.Reactors.TryGetValue(id, out ReactorInfo info) &&
+                        !string.IsNullOrEmpty(info.Name)
+                        ? $"{id} ({info.Name})"
+                        : id;
+                    return new LifeEntry(id, name, LifeEntryType.Reactor);
                 })
                 .OrderBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase));
         }

@@ -28,6 +28,7 @@ namespace HaCreator.GUI.InstanceEditor
         }
         private void LoadItems()
         {
+            Program.InfoManager.EnsureStringData();
             foreach (KeyValuePair<int, Tuple<string, string, string>> item in Program.InfoManager.ItemNameCache)
             {
                 int id = item.Key;
